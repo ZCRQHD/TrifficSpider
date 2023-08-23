@@ -11,13 +11,16 @@ class LineItem(scrapy.Item):
     # name = scrapy.Field()
     province = scrapy.Field()
     city = scrapy.Field()
-
+    code =  scrapy.Field()
+    lineTotal = scrapy.Field() # 线路总数
     stationList = scrapy.Field()  # 站点名录
 
 class BusItem(LineItem):
     busType = scrapy.Field()  #公交类型
     time = scrapy.Field()  # 运营时间
+    typeTotal = scrapy.Field() # 类型总数
 
+################################
 
 class SubwayItem(LineItem):
     color = scrapy.Field() # 代表色
