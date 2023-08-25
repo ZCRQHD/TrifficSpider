@@ -8,7 +8,7 @@ import scrapy
 
 class LineItem(scrapy.Item):
     # define the fields for your item here like:
-    # name = scrapy.Field()
+    name = scrapy.Field()
     province = scrapy.Field()
     city = scrapy.Field()
     code =  scrapy.Field()
@@ -44,12 +44,17 @@ class SubwayStation(Station):
 
 
 class BusStation(Station):
-    def __init__(self, name,line,subway):
+    def __init__(self, name,line,subway,platform):
         super(BusStation, self).__init__(name)
-        self.line = line
+        self.line = line  # 包含线路名
         self.subway = subway  # 地铁换乘信息
+        self.platform = platform  # 站台表
 
 class TrafficWeb(scrapy.Item):
+    """
+    交通网
+    """
     stationList = scrapy.Field()
     lineList = scrapy.Field()
+    province = scrapy.Field()
     city = scrapy.Field()
