@@ -2,9 +2,10 @@ import scrapy
 from scrapy import Request
 from ..items import *
 from bs4 import BeautifulSoup
+import json as js
 class BusSpider(scrapy.Spider):
     name = "bus"
-    allowed_domains = ["www.8684.cn"]
+    allowed_domains = ["8684.cn"]
     start_urls = ["https://api.8684.cn/v3/api.php?do=citys&act=province"]
 
     def parse(self, response):
@@ -13,18 +14,20 @@ class BusSpider(scrapy.Spider):
         :param response:
         :return:
         """
-        json = response.getjson()
+        json = js.loads(response.text)
+
 
         for group in json['stations']:
             provinceName = group['c']  # item里用的
             for city in group['childs']:
                 item = BusItem()
-                urlName = group['e'] # 网址用的名字
-                cityName = group['c'] # item里用的
+                urlName = city['e'] # 网址用的名字
+                cityName = city['c'] # item里用的
                 item['city'] = cityName
                 item['province'] = provinceName
+
                 yield Request("https://{}.8684.cn/".format( urlName),callback=self.cityPage,
-                              meta={"item" : item}
+                              meta={"item" : item,'city':urlName}
                               ,priority=10)
     def cityPage(self,response):
         """
@@ -33,14 +36,15 @@ class BusSpider(scrapy.Spider):
         :return:
         """
         tag = BeautifulSoup(response.text)
-        meta = tag.metadata
+        meta = response.meta
         item = meta['item']
+        cityName = meta['cityName']
         typeTag = tag.find('div', attrs={'class': "bus-layer depth w120"})\
         .find_all("div",attrs={'class':"pl10"})[2].find('div',attrs={'class':"list"}).\
             find_all("a",)
         item['typeTotal']  = len(typeTag)
         for type in typeTag:
-            url = type['href']
+            url = f"https://{cityName}.8684.cn" + type['href']
             yield Request(url,meta={'item':item},callback=self.typePage,priority=15)
 
     def typePage(self,response):
@@ -50,7 +54,7 @@ class BusSpider(scrapy.Spider):
         :return:
         """
         tag = BeautifulSoup(response.text)
-        item = response.metadata['item']
+        item = response.meta['item']
         lineTag = tag.find('div',attrs={'class':"list clearfix"})
         for line in lineTag.find_all('a'):
             url = line['href']
@@ -59,13 +63,67 @@ class BusSpider(scrapy.Spider):
             yield Request(url,meta={'item':item},callback=self.linePage,priority=20)
 
     def linePage(self,response):
-        pass
+        tag = BeautifulSoup(response.text)
+        item = response.meta['item']
+        lineTag = tag.find('div',attrs={'class':"service-area"})
+        upLineTag,downLineTag = lineTag.find_all("div",attrs={'class':"bus-lzlist mb15"})
+        upLineList = []
+        downLineList = []
+        code = 0
+        for i in upLineTag.find_all('a'):
+            upLineList.append((code,i.text,i['href'].split("_")[1]))
+            code += 1
+        code = 0
+        for i in downLineTag.find_all('a'):
+            downLineList.append((code,i.text,i['href'].split("_")[1]))
+            code += 1
+        downLineList.reverse()
+        lineList = []
+        for i in range(0,len(upLineList)):
+            onlyUp = False
+            onlyDown = False
+            if upLineList[0][2] == downLineList[0][2]:
+                lineList.append((upLineList[0],'double'))
+                upLineList.pop(0)
+                downLineList.pop(0)
+            else :
+                for code in range(1,len(downLineList)):
+                    """
+                    遍历下行列表，如果没有说明上行站仅上行
+                    """
+                    if downLineList[code][2] == upLineList[0][2]:
+                        """
+                        说明该站非仅上行
+                        """
+                        lineList.append((downLineList[0],'down'))
+                        downLineList.pop(0)
+                        break
+                else:
+                    """
+                    没找到的话
+                    """
+                    lineList.append((upLineList[0],'up'))
+                    upLineList.pop(0)
+        item['stationList'] = item
+        yield item
+
+
+
+
+"""
+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
+"""
+
+
+
+
+
+
 
 """
 
 https://api.8684.cn/bus_station_map_station.php?code=5085a6b6&ecity=beijing&kind=2
-
-https://ditu. amap.com/service/poiBus?query_type=TQUERY&pagesize=20&pagenum=1&qii=true&cluster_state=5&need_utd=true&utd_sceneid=1000&div=PC1000&addr_poi_merge=true&is_classify=true&zoom=9.14&city=%E4%B8%8A%E6%B5%B7%E5%B8%82&src=mypage&callnative=0&platform=pc&innersrc=uriapi&keywords=%E5%9C%B0%E9%93%813%E5%8F%B7%E7%BA%BF&data_type=BUSLINE
+https://ditu.amap.com/service/poiInfo?query_type=TQUERY&pagesize=20&pagenum=1&qii=true&cluster_state=5&need_utd=true&utd_sceneid=1000&div=PC1000&addr_poi_merge=true&is_classify=true&zoom=12.9&city=110000&geoobj=116.42275%7C39.878084%7C116.51115%7C39.973276&keywords=%E5%9C%B0%E9%93%815%E5%8F%B7%E7%BA%BF
 https://ditu.amap.com/detail/get/detail?id=BV10707429
 
 """

@@ -44,7 +44,7 @@ class SubwayStation(Station):
 
 
 class BusStation(Station):
-    def __init__(self, name,line,subway,platform):
+    def __init__(self, name,line=None,platform=None,subway=None,):
         super(BusStation, self).__init__(name)
         self.line = line  # 包含线路名
         self.subway = subway  # 地铁换乘信息
