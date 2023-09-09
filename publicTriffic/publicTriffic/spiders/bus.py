@@ -38,14 +38,14 @@ class BusSpider(scrapy.Spider):
         tag = BeautifulSoup(response.text)
         meta = response.meta
         item = meta['item']
-        cityName = meta['cityName']
+        cityName = meta['city']
         typeTag = tag.find('div', attrs={'class': "bus-layer depth w120"})\
         .find_all("div",attrs={'class':"pl10"})[2].find('div',attrs={'class':"list"}).\
             find_all("a",)
         item['typeTotal']  = len(typeTag)
         for type in typeTag:
             url = f"https://{cityName}.8684.cn" + type['href']
-            yield Request(url,meta={'item':item},callback=self.typePage,priority=15)
+            yield Request(url,meta={'item':item,'city':cityName},callback=self.typePage,priority=15)
 
     def typePage(self,response):
         """
@@ -55,9 +55,10 @@ class BusSpider(scrapy.Spider):
         """
         tag = BeautifulSoup(response.text)
         item = response.meta['item']
+        cityName = response.meta['city']
         lineTag = tag.find('div',attrs={'class':"list clearfix"})
         for line in lineTag.find_all('a'):
-            url = line['href']
+            url = "https://{}.8684.cn/".format( cityName ) + line['href']
             item['code'] = url.split('_')[1]
             item['name'] = line.text
             yield Request(url,meta={'item':item},callback=self.linePage,priority=20)
@@ -65,7 +66,7 @@ class BusSpider(scrapy.Spider):
     def linePage(self,response):
         tag = BeautifulSoup(response.text)
         item = response.meta['item']
-        lineTag = tag.find('div',attrs={'class':"service-area"})
+        lineTag = tag.find_all('div',attrs={"class" : "service-area"})[1]
         upLineTag,downLineTag = lineTag.find_all("div",attrs={'class':"bus-lzlist mb15"})
         upLineList = []
         downLineList = []
@@ -104,7 +105,7 @@ class BusSpider(scrapy.Spider):
                     """
                     lineList.append((upLineList[0],'up'))
                     upLineList.pop(0)
-        item['stationList'] = item
+        item['stationList'] = lineList
         yield item
 
 
