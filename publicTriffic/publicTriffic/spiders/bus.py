@@ -42,9 +42,11 @@ class BusSpider(scrapy.Spider):
         typeTag = tag.find('div', attrs={'class': "bus-layer depth w120"})\
         .find_all("div",attrs={'class':"pl10"})[2].find('div',attrs={'class':"list"}).\
             find_all("a",)
-        item['typeTotal']  = len(typeTag)
+        # item['typeTotal']  = len(typeTag)
         for type in typeTag:
             url = f"https://{cityName}.8684.cn" + type['href']
+            item['busType'] = type.text
+            self.log("get {} {} {}".format(item['province'], item['city'],item['busType']))
             yield Request(url,meta={'item':item,'city':cityName},callback=self.typePage,priority=15)
 
     def typePage(self,response):
@@ -61,6 +63,7 @@ class BusSpider(scrapy.Spider):
             url = "https://{}.8684.cn/".format( cityName ) + line['href']
             item['code'] = url.split('_')[1]
             item['name'] = line.text
+            self.log("get {} {} {} {}".format(item['province'], item['city'],item['busType'],item['name']))
             yield Request(url,meta={'item':item},callback=self.linePage,priority=20)
 
     def linePage(self,response):
@@ -106,14 +109,12 @@ class BusSpider(scrapy.Spider):
                     lineList.append((upLineList[0],'up'))
                     upLineList.pop(0)
         item['stationList'] = lineList
+        self.log("getItem")
         yield item
 
 
 
 
-"""
-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
-"""
 
 
 
