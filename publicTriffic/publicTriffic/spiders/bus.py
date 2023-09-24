@@ -39,10 +39,13 @@ class BusSpider(scrapy.Spider):
         meta = response.meta
         item = meta['item']
         cityName = meta['city']
-        typeTag = tag.find('div', attrs={'class': "bus-layer depth w120"})\
-        .find_all("div",attrs={'class':"pl10"})[2].find('div',attrs={'class':"list"}).\
-            find_all("a",)
+        typeTagList = tag.find('div', attrs={'class': "bus-layer depth w120"})\
+        .find_all("div",attrs={'class':"pl10"})
         # item['typeTotal']  = len(typeTag)
+        typeTag = []
+        for type in typeTagList:
+            if type.find('span',attrs={'class':"kt"}).text == "线路分类：":
+                typeTag = type.find_all('a')
         for type in typeTag:
             url = f"https://{cityName}.8684.cn" + type['href']
             item['busType'] = type.text
@@ -70,28 +73,27 @@ class BusSpider(scrapy.Spider):
         tag = BeautifulSoup(response.text)
         item = response.meta['item']
         lineTag = tag.find_all('div',attrs={"class" : "service-area"})[1]
-        upLineTag,downLineTag = lineTag.find_all("div",attrs={'class':"bus-lzlist mb15"})
-        upLineList = []
-        downLineList = []
-        code = 0
-        for i in upLineTag.find_all('a'):
-            upLineList.append((code,i.text,i['href'].split("_")[1]))
-            code += 1
-        code = 0
-        for i in downLineTag.find_all('a'):
-            downLineList.append((code,i.text,i['href'].split("_")[1]))
-            code += 1
-        downLineList.reverse()
-        lineList = []
-        for i in range(0,len(upLineList)):
-            onlyUp = False
-            onlyDown = False
+        lineTagList = lineTag.find_all("div",attrs={'class':"bus-lzlist mb15"})
+        if len(lineTagList) == 2:
+            upLineTag ,downLineTag = lineTagList
+            upLineList = []
+            downLineList = []
+            code = 0
+            for i in upLineTag.find_all('a'):
+                upLineList.append((code,i.text,i['href'].split("_")[1]))
+                code += 1
+            code = 0
+            for i in downLineTag.find_all('a'):
+                downLineList.append((code,i.text,i['href'].split("_")[1]))
+                code += 1
+            downLineList.reverse()
+            lineList = []
             if upLineList[0][2] == downLineList[0][2]:
-                lineList.append((upLineList[0],'double'))
+                lineList.append((upLineList[0], 'double'))
                 upLineList.pop(0)
                 downLineList.pop(0)
-            else :
-                for code in range(1,len(downLineList)):
+            else:
+                for code in range(1, len(downLineList)):
                     """
                     遍历下行列表，如果没有说明上行站仅上行
                     """
@@ -99,27 +101,26 @@ class BusSpider(scrapy.Spider):
                         """
                         说明该站非仅上行
                         """
-                        lineList.append((downLineList[0],'down'))
+                        lineList.append((downLineList[0], 'down'))
                         downLineList.pop(0)
                         break
                 else:
                     """
                     没找到的话
                     """
-                    lineList.append((upLineList[0],'up'))
+                    lineList.append((upLineList[0], 'up'))
                     upLineList.pop(0)
-        item['stationList'] = lineList
-        self.log("getItem")
+
+            item['stationList'] = lineList
+        elif len(lineTagList) == 1:
+            lineList = []
+
+            code = 0
+            for i in lineTagList[0].find_all('a'):
+                lineList.append(((code,i.text,i['href'].split("_")[1]),"double"))
+                code += 1
+            item['stationList'] = lineList
         yield item
-
-
-
-
-
-
-
-
-
 
 
 """

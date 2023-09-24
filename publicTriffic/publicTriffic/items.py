@@ -11,16 +11,18 @@ class LineItem(scrapy.Item):
     name = scrapy.Field()
     province = scrapy.Field()
     city = scrapy.Field()
-    code =  scrapy.Field()
-    lineTotal = scrapy.Field() # 线路总数
+    code = scrapy.Field()
+    time = scrapy.Field()  # 运营时间
+    # lineTotal = scrapy.Field() # 线路总数
     stationList = scrapy.Field()  # 站点名录
+    path = scrapy.Field() #
 
 class BusItem(LineItem):
     busType = scrapy.Field()  #公交类型
-    time = scrapy.Field()  # 运营时间
-    typeTotal = scrapy.Field() # 类型总数
 
-################################
+    # typeTotal = scrapy.Field() # 类型总数
+
+
 
 class SubwayItem(LineItem):
     color = scrapy.Field() # 代表色
@@ -29,23 +31,23 @@ class SubwayItem(LineItem):
 
 
 class Station:
-    def __init__(self, name,):
+    def __init__(self, name,time,location):
         self.name = name
-
-class SubwayStation(Station):
-    def __init__(self, name,time,fencha,huancheng,line,exitList):
-        super(Station, self).__init__(name)
         self.time = time
+        self.location = location
+class SubwayStation(Station):
+    def __init__(self, name,time=None,fencha=None,huancheng=None,line=None,location=None):
+        super(Station, self).__init__(name,time,location)
         self.fencha =fencha
         self.huancheng =huancheng
         self.line = line
-        self.exitList = exitList
+
 
 
 
 class BusStation(Station):
-    def __init__(self, name,line=None,platform=None,subway=None,):
-        super(BusStation, self).__init__(name)
+    def __init__(self, name,line=None,platform=None,subway=None,time=None,location=None):
+        super(BusStation, self).__init__(name,time,location )
         self.line = line  # 包含线路名
         self.subway = subway  # 地铁换乘信息
         self.platform = platform  # 站台表
