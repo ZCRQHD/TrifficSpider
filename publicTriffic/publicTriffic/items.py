@@ -52,6 +52,13 @@ class BusStation(Station):
         self.subway = subway  # 地铁换乘信息
         self.platform = platform  # 站台表
 
+class Time:
+    """
+    运行时间类
+    """
+    def __init__(self,isSeason=False,timeDict={}):
+        self.isSeason = isSeason
+        self.timeDict = timeDict
 class TrafficWeb(scrapy.Item):
     """
     交通网

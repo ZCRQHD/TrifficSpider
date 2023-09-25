@@ -43,5 +43,6 @@ class BaiduSpider(scrapy.Spider):
             item = BusItem()
             item['name'] = lineInformathon['raw_name']
             item['code'] = lineInformathon['uid']
+
         elif lineType == 'subway':
             item = SubwayItem()
