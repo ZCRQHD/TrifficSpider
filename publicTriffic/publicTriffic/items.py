@@ -16,6 +16,7 @@ class LineItem(scrapy.Item):
     # lineTotal = scrapy.Field() # 线路总数
     stationList = scrapy.Field()  # 站点名录
     path = scrapy.Field() #
+    preOpen = scrapy.Field() # 暂缓站数
 
 class BusItem(LineItem):
     busType = scrapy.Field()  #公交类型

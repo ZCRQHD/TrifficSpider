@@ -1,7 +1,13 @@
-import scrapy
 from scrapy import Request
 import json
 from..items import *
+import json
+
+from scrapy import Request
+
+from ..items import *
+
+
 class BaiduSpider(scrapy.Spider):
     name = "baidu"
     allowed_domains = ["map.baidu.com"]
@@ -41,8 +47,26 @@ class BaiduSpider(scrapy.Spider):
         lineType = response.metadata['type']
         if lineType == 'bus':
             item = BusItem()
-            item['name'] = lineInformathon['raw_name']
-            item['code'] = lineInformathon['uid']
 
-        elif lineType == 'subway':
+
+        else:
             item = SubwayItem()
+            color = lineInformathon['lineColor']
+
+        item['name'] = lineInformathon['raw_name']
+        item['code'] = lineInformathon['uid']
+        pathStr = lineInformathon['geo'].spilt('|')[-1]
+        positionList = pathStr.spilt(",")
+        pathList = []
+        for i in range(0, len(positionList), 2):
+            pathList.append((positionList[i], positionList[i + 1]))
+        stationList = lineInformathon['stations']
+
+        yield Request(url="https://map.baidu.com/?uid={}&ugc_type=3&ugc_ver=1".format(stationList[0]['uid'])
+                      ,meta={
+                "station" : 0
+            })
+
+
+    def stationParse(self,response):
+        lineJson = json.loads(response.text)
