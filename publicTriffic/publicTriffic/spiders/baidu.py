@@ -6,8 +6,8 @@ import json
 from scrapy import Request
 
 from ..items import *
-
-
+from datetime import date
+import re
 class BaiduSpider(scrapy.Spider):
     name = "baidu"
     allowed_domains = ["map.baidu.com"]
@@ -34,9 +34,14 @@ class BaiduSpider(scrapy.Spider):
 
         for place in targetLine:
             classList = [i[0] for i in place['cla']]
-            if [903, "公交线路"] in classList:
-                lineType = "bus" if 903 in classList else "subway"
-                yield Request(lineUrl.format(place['uid']), callback=self.lineParse, priority=15,meta={
+            if 904 in classList:
+                lineType = "bus"
+            elif 905 in classList:
+                lineType = "subway"
+            else :
+                continue
+
+            yield Request(lineUrl.format(place['uid']), callback=self.lineParse, priority=15,meta={
                     'type': lineType
                 })
 
@@ -61,10 +66,25 @@ class BaiduSpider(scrapy.Spider):
         for i in range(0, len(positionList), 2):
             pathList.append((positionList[i], positionList[i + 1]))
         stationList = lineInformathon['stations']
+        item['company'] = lineInformathon['company']
+        item['pairCode'] = lineInformathon['pair_line']['uid']
+        time = Time()
+        if len(lineInformathon['workTime']) == 1:
+            time.isSeason = False
+        else:
+            time.isSeason = True
+            seasonTimeList = lineInformathon['workTimeDesc']
+            # reText = ""
+            #  for i in seasonTimeList:
 
-        yield Request(url="https://map.baidu.com/?uid={}&ugc_type=3&ugc_ver=1".format(stationList[0]['uid'])
+        typeStr = "-公交车站" if lineType == "bus" else "-地铁站"
+        yield Request(url="https://map.baidu.com/?newmap=1&reqflag=pcmap&biz=1&from=webmap&da_par=direct&pcevaname=pc4.1&qt=s&da_src=searchBox.button&wd={}{}&c=148&src=0&wd2=&pn=0&sug=0&l=19".format
+        (stationList[0]['name'],typeStr)
                       ,meta={
-                "station" : 0
+                "station" : 0,
+                "stationJson" : stationList,
+                "stationList" : [],
+                "item" :item
             })
 
 

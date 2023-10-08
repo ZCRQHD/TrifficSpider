@@ -16,8 +16,9 @@ class LineItem(scrapy.Item):
     # lineTotal = scrapy.Field() # 线路总数
     stationList = scrapy.Field()  # 站点名录
     path = scrapy.Field() #
-    preOpen = scrapy.Field() # 暂缓站数
-
+    preOpen = scrapy.Field()  # 暂缓站数
+    company = scrapy.Field()  # 运营公司
+    pairCode = scrapy.Field()  # 对开车次uid
 class BusItem(LineItem):
     busType = scrapy.Field()  #公交类型
 
@@ -32,24 +33,25 @@ class SubwayItem(LineItem):
 
 
 class Station:
-    def __init__(self, name,time,location):
+    def __init__(self, name,time,location,line):
         self.name = name
         self.time = time
         self.location = location
+        self.line = line# 包含线路名
 class SubwayStation(Station):
     def __init__(self, name,time=None,fencha=None,huancheng=None,line=None,location=None):
-        super(Station, self).__init__(name,time,location)
+        super(Station, self).__init__(name,time,location,line)
         self.fencha =fencha
         self.huancheng =huancheng
-        self.line = line
+
 
 
 
 
 class BusStation(Station):
     def __init__(self, name,line=None,platform=None,subway=None,time=None,location=None):
-        super(BusStation, self).__init__(name,time,location )
-        self.line = line  # 包含线路名
+        super(BusStation, self).__init__(name,time,location ,line)
+
         self.subway = subway  # 地铁换乘信息
         self.platform = platform  # 站台表
 
