@@ -17,7 +17,9 @@ class BaiduSpider(scrapy.Spider):
         jsonFile = open('E:\\工程文件\\程序文件\\python项目\\公交爬虫\\publicTriffic\\busData.json', 'r')
         jsonDict = json.load(jsonFile)
         urlFormat = "https://map.baidu.com/?newmap=1&reqflag=pcmap&biz=1&from=webmap&da_par=direct&pcevaname=pc4.1&qt=s&da_src=searchBox.button&wd={}&c=131&src=0&wd2={}"
-
+        self.lineSet = set()
+        self.stationSet = set()
+        # 这两个是去重用的
         for provinceName in jsonDict['busData'].keys():
             province = jsonDict['busData'].pop(provinceName)
             for cityName in province.keys():
@@ -40,10 +42,15 @@ class BaiduSpider(scrapy.Spider):
                 lineType = "subway"
             else :
                 continue
-
-            yield Request(lineUrl.format(place['uid']), callback=self.lineParse, priority=15,meta={
+            uid = place['uid']
+            if uid not in self.lineSet:
+                self.lineSet.add(uid)
+                yield Request(lineUrl.format(uid), callback=self.lineParse, priority=15, meta={
                     'type': lineType
                 })
+            else:
+                continue
+
 
 
     def lineParse(self,response):
@@ -68,18 +75,27 @@ class BaiduSpider(scrapy.Spider):
         stationList = lineInformathon['stations']
         item['company'] = lineInformathon['company']
         item['pairCode'] = lineInformathon['pair_line']['uid']
-        time = Time()
-        if len(lineInformathon['workTime']) == 1:
-            time.isSeason = False
-        else:
-            time.isSeason = True
-            seasonTimeList = lineInformathon['workTimeDesc']
+
+        # if len(lineInformathon['workTime']) == 1:
+        #     time.isSeason = False
+        # else:
+        #     time.isSeason = True
+        #     seasonTimeList = lineInformathon['workTimeDesc']
             # reText = ""
             #  for i in seasonTimeList:
 
         typeStr = "-公交车站" if lineType == "bus" else "-地铁站"
+        stationIndex = 0
+        stationName = ""
+        while True:
+            stationName = stationList[stationIndex]['name']
+            if stationName not in self.stationSet:
+                break
+
+            else:
+                stationIndex += 1
         yield Request(url="https://map.baidu.com/?newmap=1&reqflag=pcmap&biz=1&from=webmap&da_par=direct&pcevaname=pc4.1&qt=s&da_src=searchBox.button&wd={}{}&c=148&src=0&wd2=&pn=0&sug=0&l=19".format
-        (stationList[0]['name'],typeStr)
+        (stationName,typeStr)
                       ,meta={
                 "station" : 0,
                 "stationJson" : stationList,
@@ -90,3 +106,4 @@ class BaiduSpider(scrapy.Spider):
 
     def stationParse(self,response):
         lineJson = json.loads(response.text)
+

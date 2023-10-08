@@ -33,14 +33,15 @@ class SubwayItem(LineItem):
 
 
 class Station:
-    def __init__(self, name,time,location,line):
+    def __init__(self, name,time,location,line,city=None):
         self.name = name
         self.time = time
         self.location = location
         self.line = line# 包含线路名
+        self.city = city
 class SubwayStation(Station):
-    def __init__(self, name,time=None,fencha=None,huancheng=None,line=None,location=None):
-        super(Station, self).__init__(name,time,location,line)
+    def __init__(self, name,time=None,fencha=None,huancheng=None,line=None,location=None,city=None):
+        super(Station, self).__init__(name,time,location,line,city)
         self.fencha =fencha
         self.huancheng =huancheng
 
@@ -49,19 +50,35 @@ class SubwayStation(Station):
 
 
 class BusStation(Station):
-    def __init__(self, name,line=None,platform=None,subway=None,time=None,location=None):
-        super(BusStation, self).__init__(name,time,location ,line)
+    def __init__(self, name,line=None,platform=None,subway=None,time=None,location=None,city=None):
+        super(BusStation, self).__init__(name,time,location ,line,city)
 
         self.subway = subway  # 地铁换乘信息
         self.platform = platform  # 站台表
 
-class Time:
+# class Time:
+#     """
+#     运行时间类
+#     """
+#     def __init__(self,isSeason=False,timeDict={}):
+#         self.isSeason = isSeason
+#         self.timeDict = timeDict
+class Platform:
     """
-    运行时间类
+    站台类
     """
-    def __init__(self,isSeason=False,timeDict={}):
-        self.isSeason = isSeason
-        self.timeDict = timeDict
+    def __init__(self,station,location,):
+        self.station = station
+        self.location = location
+        self.lineLIst = []
+class PassStation:
+    """
+    经过的车站
+    """
+    def __init__(self,city,name,location):
+        self.city = city
+        self.name = name
+        self.location = location
 class TrafficWeb(scrapy.Item):
     """
     交通网
