@@ -51,7 +51,7 @@ class BaiduSpider(scrapy.Spider):
             uid = place['uid']
             if uid not in self.lineSet:
                 self.lineSet.add(uid)
-                yield Request(lineUrl.format(uid), callback=self.lineParse, priority=15, meta={
+                yield Request(lineUrl.format(uid), callback=self.lineParse, priority=5, meta={
                     'type': lineType
                 })
             else:
@@ -76,22 +76,46 @@ class BaiduSpider(scrapy.Spider):
         item['company'] = content['company']
         item['preOpen'] = content['pre_open']
         item['pairCode'] = content['pair_line']['uid']
+        self.log(f"found {lineType} line in {item['province']} {item['city']} named {item['name']}")
         pathStr:str = content['geo']
         pathStr = pathStr.split("|")[2][:-1]
         pathList = pathStr.split(",")
         convertPathList = []
         for i in range(0,len(pathList)):
             lan ,lot = float(pathList[i]),float(pathList[i + 1])
-            position = self.bd09_to_gcj02(lan,lot)
+            position = (lan, lot)
             convertPathList.append(position)
         item['path'] = convertPathList
-        stationList = [(station['uid'],station['geo'],station['name'])
+        stationList = [(station['uid'], station['geo'].split("|")[1], station['name'])
                        for station in content['stationList']]
         item['stationList'] = stationList
         if lineType == 'subway':
             item['color'] = content['line_color']
 
+        for station in stationList:
+            if station[0] not in self.stationSet:
+                self.stationSet.add(station[0])
+                url = f"https://map.baidu.com/?uid={station[0]}&ugc_type=3&ugc_ver=1&qt=detailConInfo&device_ratio=2&compat=1&t=1714795401159&auth=bf6H8U7K2IFHGd@x@5VeC6B0Xbf=5HC4uxNxENTHBTRtyOOyyIFIAUvCuyAT9xXwvkGcuVtvvhguVtvyheuVtvCMGuVtvCQMuVtvIPcuxtw8wkv7uvZgMuVtv@vcuVtvc3CuVtvcPPuVtveGvuxVtEnrR1GDdw8E62qvyMuJx7OIgHvhgMuzVVtvrMhuzVtGccZcuxtf0wd0vyOyFOUICUy&seckey=6cm9oCWblWcXJH0b4zVSMCw/zCVTeM6PwLZ6AwxhTtOXbc4JhCaIUuGhXM3GdiGSVrIeM0WWKTAXL2nEuexD5w==,6cm9oCWblWcXJH0b4zVSMCw_zCVTeM6PwLZ6AwxhTtPtxDiQY_xf54N3FJhucp5GGHOByJ6fEHfcjUqr7h8GZmHDi1rcUs1YhedmiJPShVNbacxRGMhFMrTNXpjaBXOkAXmClDAJRybwqL2Xk-Q5f1W7da-MW97xRlJMgxuYRd9C8fT5C8EOxGYpBGON-go4GStjrJRLQBinQFo7O3mlcA&pcevaname=pc4.1&newfrom=zhuzhan_webmap"
+                yield Request(url=url, callback=self.stationParse, priority=20, meta={})
 
+        yield item
+
+    def stationParse(self, response):
+        stationJson = json.loads(response.text)
+        meta = response.request.meta
+        for station in stationJson['content']:
+            typeList = [type for type in station['cla']]
+            if 22 in typeList:
+                for line in station['blinfo']:
+                    if line['uid'] not in self.lineSet:
+                        lineUrl = "https://map.baidu.com/?qt=bsl&tps=&newmap=1&uid={}&c=131"
+                        uid = line['uid']
+                        self.lineSet.add(uid)
+
+                        lineType = "bus" if 214 in typeList else "subway"
+                        yield Request(lineUrl.format(uid), callback=self.lineParse, priority=5, meta={
+                            'type': lineType
+                        })
 
 
     def bd09_to_gcj02(self,bd_lon, bd_lat):
@@ -112,6 +136,4 @@ class BaiduSpider(scrapy.Spider):
         return gg_lng, gg_lat
 
 
-    def stationParse(self,response):
-        lineJson = json.loads(response.text)
 

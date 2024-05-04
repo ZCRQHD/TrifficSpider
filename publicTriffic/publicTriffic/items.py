@@ -4,7 +4,7 @@
 # https://docs.scrapy.org/en/latest/topics/items.html
 
 import scrapy
-
+import hashlib
 
 class LineItem(scrapy.Item):
     # define the fields for your item here like:
@@ -28,58 +28,51 @@ class SubwayItem(LineItem):
     color = scrapy.Field() # 代表色
 
 
-class Station:
-    def __init__(self, name,time,location,line,city=None):
-        self.name = name
-        self.time = time
-        self.location = location
-        self.line = line# 包含线路名
+class MainStation:
+    """
+    总站
+    判定机制：省市站名均相同
+    """
+
+    def __init__(self, province, city, name):
+        self.province = province
         self.city = city
-class SubwayStation(Station):
-    def __init__(self, name,time=None,fencha=None,huancheng=None,line=None,location=None,city=None):
-        super(Station, self).__init__(name,time,location,line,city)
-        self.fencha =fencha
-        self.huancheng =huancheng
+        self.name = name
+        self.stationList = []
+        self.ID = self.getID
+
+    def getID(self):
+        hash = hashlib.sha256(f"{self.province}/{self.city}:{self.name}")
+        return hash.hexdigest()
+
+    def appendStation(self, station):
+        if station in self.stationList:
+            self.stationList.append(station)
 
 
-
-
-
-class BusStation(Station):
-    def __init__(self, name,line=None,platform=None,subway=None,time=None,location=None,city=None):
-        super(BusStation, self).__init__(name,time,location ,line,city)
-
-        self.subway = subway  # 地铁换乘信息
-        self.platform = platform  # 站台表
-
-# class Time:
-#     """
-#     运行时间类
-#     """
-#     def __init__(self,isSeason=False,timeDict={}):
-#         self.isSeason = isSeason
-#         self.timeDict = timeDict
 class Platform:
     """
     站台类
+    判定：位置一样
     """
-    def __init__(self,station,location,):
-        self.station = station
+
+    def __init__(self, location, station, uid):
         self.location = location
-        self.lineLIst = []
-class PassStation:
+        self.station = station  # 所属车站uid
+        self.uid = uid
+
+
+class Station:
     """
-    经过的车站
+    车站类
+    判定：uid
     """
-    def __init__(self,city,name,location):
-        self.city = city
-        self.name = name
-        self.location = location
-class TrafficWeb(scrapy.Item):
-    """
-    交通网
-    """
-    stationList = scrapy.Field()
-    lineList = scrapy.Field()
-    province = scrapy.Field()
-    city = scrapy.Field()
+
+    def __init__(self, uid):
+        self.uid = uid  # 本身的uid
+        self.mainStation = ""  # 总站uid
+        self.platformList = []  # 站台表
+
+    def appendPlatform(self, platform):
+        if platform in self.platformList:
+            self.platformList.append(platform)
