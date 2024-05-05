@@ -81,7 +81,6 @@ class PublictrifficSpiderMiddleware:
 
     def spider_opened(self, spider):
         spider.logger.info("Spider opened: %s" % spider.name)
-        spider.l
         self.mainStationDigit = 0  # 总站计数
         self.stationDigit = 0
         self.platformDigit = 0

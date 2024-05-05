@@ -10,12 +10,14 @@ import shelve
 from json import dump
 from peewee import *
 import pymysql
-# class Line(Model):
-#     class Meta:
-#         database = ''
-#         db_table = "line"
-#
+
+
 # class SaveDBPipeline:
+#     db = pymysql.connect()
+#     class Line(Model):
+#         class Meta:
+#             database = ''
+#             db_table = "line"
 #     def open_spider(self,spider):
 #         spider.log("DB pipline has started")
 #     def process_item(self,item,spider):
@@ -45,7 +47,7 @@ class SaveJsonPipeline:
 #     def process_item(self, item, spider):
 #         print(item)
     def close_spider(self, spider):
-        fileName = "./result/baidu.json" if spider.name == "baidu" else "./result/8684.json"
+        fileName = "publicTriffic/result/baidu.json" if spider.name == "baidu" else "publicTriffic/result/8684.json"
         jsonFile = open(fileName, "w")
         dump(self.dict,jsonFile,ensure_ascii=False)
         jsonFile.close()

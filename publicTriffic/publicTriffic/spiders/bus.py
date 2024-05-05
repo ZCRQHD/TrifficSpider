@@ -14,43 +14,41 @@ class BusSpider(scrapy.Spider):
         :param response:
         :return:
         """
-        json = js.loads(response.text)
+        json = js.loads(str(response.text))
 
 
         for group in json['stations']:
             provinceName = group['c']  # item里用的
             for city in group['childs']:
-                item = BusItem()
                 urlName = city['e'] # 网址用的名字
                 cityName = city['c'] # item里用的
-                item['city'] = cityName
-                item['province'] = provinceName
 
                 yield Request("https://{}.8684.cn/".format( urlName),callback=self.cityPage,
-                              meta={"item" : item,'city':urlName}
-                              ,priority=10)
+                              meta={"cityItem": cityName, "province": provinceName, 'cityUrl': urlName}
+                              , priority=20)
     def cityPage(self,response):
         """
         类型页
         :param response:
         :return:
         """
-        tag = BeautifulSoup(response.text)
+        tag = BeautifulSoup(str(response.text))
         meta = response.meta
-        item = meta['item']
-        cityName = meta['city']
+        cityItem = meta['cityItem']
+        provinceName = meta['province']
+        cityName = meta['cityUrl']
         typeTagList = tag.find('div', attrs={'class': "bus-layer depth w120"})\
         .find_all("div",attrs={'class':"pl10"})
-        # item['typeTotal']  = len(typeTag)
         typeTag = []
         for type in typeTagList:
             if type.find('span',attrs={'class':"kt"}).text == "线路分类：":
                 typeTag = type.find_all('a')
         for type in typeTag:
             url = f"https://{cityName}.8684.cn" + type['href']
-            item['busType'] = type.text
-            self.log("get {} {} {}".format(item['province'], item['city'],item['busType']))
-            yield Request(url,meta={'item':item,'city':cityName},callback=self.typePage,priority=15)
+            bustype = type.text
+            self.log("get {} {} {}".format(provinceName, cityItem, bustype))
+            yield Request(url, meta={"cityItem": cityName, "province": provinceName, 'busType': bustype
+                , 'cityUrl': cityName}, callback=self.typePage, priority=15)
 
     def typePage(self,response):
         """
@@ -58,11 +56,15 @@ class BusSpider(scrapy.Spider):
         :param response:
         :return:
         """
-        tag = BeautifulSoup(response.text)
-        item = response.meta['item']
-        cityName = response.meta['city']
+        tag = BeautifulSoup(str(response.text))
+        meta = response.meta
+        cityName = meta['cityUrl']
         lineTag = tag.find('div',attrs={'class':"list clearfix"})
         for line in lineTag.find_all('a'):
+            item = BusItem()
+            item['province'] = meta['province']
+            item['city'] = meta['cityItem']
+            item["busType"] = meta['busType']
             url = "https://{}.8684.cn/".format( cityName ) + line['href']
             item['code'] = url.split('_')[1]
             item['name'] = line.text
@@ -70,7 +72,7 @@ class BusSpider(scrapy.Spider):
             yield Request(url,meta={'item':item},callback=self.linePage,priority=20)
 
     def linePage(self,response):
-        tag = BeautifulSoup(response.text)
+        tag = BeautifulSoup(str(response.text))
         item = response.meta['item']
         lineTag = tag.find_all('div',attrs={"class" : "service-area"})[1]
         lineTagList = lineTag.find_all("div",attrs={'class':"bus-lzlist mb15"})
