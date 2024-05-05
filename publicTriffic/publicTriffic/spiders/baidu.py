@@ -9,10 +9,7 @@ from ..items import *
 from datetime import date
 import re
 import bd09convertor
-x_pi = math.pi  * 3000.0 / 180.0
 
-a = 6378245.0  # 长半轴
-ee = 0.00669342162296594323  # 扁率
 
 class BaiduSpider(scrapy.Spider):
     name = "baidu"
@@ -20,7 +17,8 @@ class BaiduSpider(scrapy.Spider):
     start_urls = ["https://map.baidu.commap.baidu.com"]
 
     def start_requests(self):
-        jsonFile = open('E:\\工程文件\\程序文件\\python项目\\公交爬虫\\publicTriffic\\busData.json', 'r')
+        jsonFile = open('E:\\工程文件\\程序文件\\python项目\\公交爬虫\\publicTriffic\\busData.json', 'r',
+                        encoding="utf-8")
         jsonDict = json.load(jsonFile)
         urlFormat = "https://map.baidu.com/?newmap=1&reqflag=pcmap&biz=1&from=webmap&da_par=direct&pcevaname=pc4.1&qt=s&da_src=searchBox.button&wd={}&c=131&src=0&wd2={}"
         self.lineSet = set()
@@ -81,13 +79,13 @@ class BaiduSpider(scrapy.Spider):
         pathStr = pathStr.split("|")[2][:-1]
         pathList = pathStr.split(",")
         convertPathList = []
-        for i in range(0,len(pathList)):
+        for i in range(0, len(pathList) - 1, 2):
             lan ,lot = float(pathList[i]),float(pathList[i + 1])
             position = (lan, lot)
             convertPathList.append(position)
         item['path'] = convertPathList
         stationList = [(station['uid'], station['geo'].split("|")[1], station['name'])
-                       for station in content['stationList']]
+                       for station in content['stations']]
         item['stationList'] = stationList
         if lineType == 'subway':
             item['color'] = content['line_color']
@@ -118,22 +116,6 @@ class BaiduSpider(scrapy.Spider):
                         })
 
 
-    def bd09_to_gcj02(self,bd_lon, bd_lat):
-        """
-       百度坐标系(BD-09)转火星坐标系(GCJ-02)
-       百度——>谷歌、高德
-       :param bd_lat:百度坐标纬度
-       :param bd_lon:百度坐标经度
-       :return:转换后的坐标列表形式
-       """
-        bd_lon,bd_lat = bd09convertor.convertMC2LL(bd_lon,bd_lat)
-        x = bd_lon - 0.0065
-        y = bd_lat - 0.006
-        z = math.sqrt(x * x + y * y) - 0.00002 * math.sin(y * x_pi)
-        theta = math.atan2(y, x) - 0.000003 * math.cos(x * x_pi)
-        gg_lng = z * math.cos(theta)
-        gg_lat = z * math.sin(theta)
-        return gg_lng, gg_lat
 
 
 

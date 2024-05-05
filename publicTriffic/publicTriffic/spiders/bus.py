@@ -86,32 +86,8 @@ class BusSpider(scrapy.Spider):
             for i in downLineTag.find_all('a'):
                 downLineList.append((code,i.text,i['href'].split("_")[1]))
                 code += 1
-            downLineList.reverse()
-            lineList = []
-            if upLineList[0][2] == downLineList[0][2]:
-                lineList.append((upLineList[0], 'double'))
-                upLineList.pop(0)
-                downLineList.pop(0)
-            else:
-                for code in range(1, len(downLineList)):
-                    """
-                    遍历下行列表，如果没有说明上行站仅上行
-                    """
-                    if downLineList[code][2] == upLineList[0][2]:
-                        """
-                        说明该站非仅上行
-                        """
-                        lineList.append((downLineList[0], 'down'))
-                        downLineList.pop(0)
-                        break
-                else:
-                    """
-                    没找到的话
-                    """
-                    lineList.append((upLineList[0], 'up'))
-                    upLineList.pop(0)
 
-            item['stationList'] = lineList
+            item['stationList'] = (upLineList, downLineList)
         elif len(lineTagList) == 1:
             lineList = []
 

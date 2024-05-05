@@ -19,7 +19,7 @@ class LineItem(scrapy.Item):
     company = scrapy.Field()  # 运营公司
     pairCode = scrapy.Field()  # 对开车次uid
 class BusItem(LineItem):
-    pass
+    busType = scrapy.Field()
     # typeTotal = scrapy.Field() # 类型总数
 
 
@@ -56,10 +56,16 @@ class Platform:
     判定：位置一样
     """
 
-    def __init__(self, location, station, uid):
-        self.location = location
+    def __init__(self, location, station, uid, name):
+        self.location = location  # 位置
         self.station = station  # 所属车站uid
-        self.uid = uid
+        self.uid = uid  # 本身uid
+        self.name = name  # 站名
+        self.lineID = []
+
+    def appendLine(self, line):
+        if line not in self.lineID:
+            self.lineID.append(line)
 
 
 class Station:

@@ -30,6 +30,6 @@ class PublictrifficPipeline:
 #     def process_item(self, item, spider):
 #         print(item)
     def close_spider(self, spider):
-        jsonFile = open("busData.json","w")
+        jsonFile = open("../busData.json", "w")
         dump(self.dict,jsonFile,ensure_ascii=False)
         jsonFile.close()
