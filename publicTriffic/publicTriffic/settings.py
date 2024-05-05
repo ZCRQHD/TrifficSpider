@@ -65,7 +65,8 @@ SPIDER_MIDDLEWARES = {
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-   "publicTriffic.pipelines.PublictrifficPipeline": 300,
+   # "publicTriffic.pipelines.SaveDBPipeline": 100,
+   "publicTriffic.pipelines.SaveJsonPipeline": 300,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

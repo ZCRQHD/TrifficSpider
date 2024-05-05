@@ -17,7 +17,7 @@ class BaiduSpider(scrapy.Spider):
     start_urls = ["https://map.baidu.commap.baidu.com"]
 
     def start_requests(self):
-        jsonFile = open('E:\\工程文件\\程序文件\\python项目\\公交爬虫\\publicTriffic\\busData.json', 'r',
+        jsonFile = open("../result/8684.json", 'r',
                         encoding="utf-8")
         jsonDict = json.load(jsonFile)
         urlFormat = "https://map.baidu.com/?newmap=1&reqflag=pcmap&biz=1&from=webmap&da_par=direct&pcevaname=pc4.1&qt=s&da_src=searchBox.button&wd={}&c=131&src=0&wd2={}"

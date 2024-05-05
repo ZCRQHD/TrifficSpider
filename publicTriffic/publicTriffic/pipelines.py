@@ -8,8 +8,23 @@
 from itemadapter import ItemAdapter
 import shelve
 from json import dump
-class PublictrifficPipeline:
+from peewee import *
+import pymysql
+# class Line(Model):
+#     class Meta:
+#         database = ''
+#         db_table = "line"
+#
+# class SaveDBPipeline:
+#     def open_spider(self,spider):
+#         spider.log("DB pipline has started")
+#     def process_item(self,item,spider):
+#         pass
+#     def close_spider(self, spider):
+#         pass
+class SaveJsonPipeline:
     def open_spider(self,spider):
+        spider.log("save")
         self.dict = {
             'busData' : {}
         }
@@ -30,6 +45,7 @@ class PublictrifficPipeline:
 #     def process_item(self, item, spider):
 #         print(item)
     def close_spider(self, spider):
-        jsonFile = open("../busData.json", "w")
+        fileName = "./result/baidu.json" if spider.name == "baidu" else "./result/8684.json"
+        jsonFile = open(fileName, "w")
         dump(self.dict,jsonFile,ensure_ascii=False)
         jsonFile.close()
