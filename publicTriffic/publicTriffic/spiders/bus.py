@@ -32,7 +32,7 @@ class BusSpider(scrapy.Spider):
         :param response:
         :return:
         """
-        tag = BeautifulSoup(str(response.text))
+        tag = BeautifulSoup(str(response.text), 'lxml')
         meta = response.meta
         cityItem = meta['cityItem']
         provinceName = meta['province']
@@ -46,7 +46,7 @@ class BusSpider(scrapy.Spider):
         for type in typeTag:
             url = f"https://{cityName}.8684.cn" + type['href']
             bustype = type.text
-            self.log("get {} {} {}".format(provinceName, cityItem, bustype))
+            # self.log("get {} {} {}".format(provinceName, cityItem, bustype))
             yield Request(url, meta={"cityItem": cityName, "province": provinceName, 'busType': bustype
                 , 'cityUrl': cityName}, callback=self.typePage, priority=15)
 
@@ -56,7 +56,7 @@ class BusSpider(scrapy.Spider):
         :param response:
         :return:
         """
-        tag = BeautifulSoup(str(response.text))
+        tag = BeautifulSoup(str(response.text), 'lxml')
         meta = response.meta
         cityName = meta['cityUrl']
         lineTag = tag.find('div',attrs={'class':"list clearfix"})
@@ -68,11 +68,11 @@ class BusSpider(scrapy.Spider):
             url = "https://{}.8684.cn/".format( cityName ) + line['href']
             item['code'] = url.split('_')[1]
             item['name'] = line.text
-            self.log("get {} {} {} {}".format(item['province'], item['city'],item['busType'],item['name']))
+            # self.log("get {} {} {} {}".format(item['province'], item['city'],item['busType'],item['name']))
             yield Request(url,meta={'item':item},callback=self.linePage,priority=20)
 
     def linePage(self,response):
-        tag = BeautifulSoup(str(response.text))
+        tag = BeautifulSoup(str(response.text), 'lxml')
         item = response.meta['item']
         lineTag = tag.find_all('div',attrs={"class" : "service-area"})[1]
         lineTagList = lineTag.find_all("div",attrs={'class':"bus-lzlist mb15"})
