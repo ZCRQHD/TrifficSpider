@@ -1,16 +1,12 @@
 import shelve
 
-from scrapy import Request
-from..items import *
+
 import json
 
 from scrapy import Request
 from scrapy.http.response import Response
-import math
+
 from ..items import *
-from datetime import date
-import re
-import bd09convertor
 
 
 class BaiduSpider(scrapy.Spider):
@@ -23,7 +19,7 @@ class BaiduSpider(scrapy.Spider):
                         encoding="utf-8")
         jsonDict = json.load(jsonFile)
         urlFormat = "https://map.baidu.com/?newmap=1&reqflag=pcmap&biz=1&from=webmap&da_par=direct&pcevaname=pc4.1&qt=s&da_src=searchBox.button&wd={}&c=131&src=0&wd2={}"
-        self.db = shelve.open('publicTriffic/db/spiderCache')
+        self.db = shelve.open('publicTriffic/db/spiderCache','w')
         baiduDict = {
             'line': [],
             'station': []
