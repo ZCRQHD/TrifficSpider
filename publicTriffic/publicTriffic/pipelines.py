@@ -102,20 +102,17 @@ class SaveDBPipeline:
 
 class SaveJsonPipeline:
     def open_spider(self, spider):
-        spider.log("save")
-        self.dict = {
-            'busData': {}
-        }
+        self.db = shelve.open('publicTriffic/db/jsonCache')
 
     def process_item(self, item, spider: scrapy.Spider):
         province = item['province']
         city = item['city']
         spider.log(f"the size of {item['province']} {item['city']} {item['name']} is {asizeof(item)}")
-        self.dict['busData'][province] = self.dict['busData'].get(province, {})
-        self.dict['busData'][province][city] = self.dict['busData'][province].get(city, {})
-        self.dict['busData'][province][city][item['busType']] = self.dict['busData'][province][city] \
+        self.db['busData'][province] = self.db['busData'].get(province, {})
+        self.db['busData'][province][city] = self.db['busData'][province].get(city, {})
+        self.db['busData'][province][city][item['busType']] = self.db['busData'][province][city] \
             .get(item['busType'], [])
-        self.dict['busData'][province][city][item['busType']].append(dict(item))
+        self.db['busData'][province][city][item['busType']].append(dict(item))
         spider.log("successfully append {} {} {} {}".format(province, city, item['busType'], item['name']))
         return item
 
@@ -126,5 +123,8 @@ class SaveJsonPipeline:
     def close_spider(self, spider):
         fileName = "publicTriffic/result/baidu.json" if spider.name == "baidu" else "publicTriffic/result/8684.json"
         jsonFile = open(fileName, "w", encoding='utf-8')
-        dump(self.dict, jsonFile, ensure_ascii=False)
+        resultDict = {
+            'busData': self.db['busData']
+        }
+        dump(self.db, jsonFile, ensure_ascii=False)
         jsonFile.close()
