@@ -46,9 +46,9 @@ DEFAULT_REQUEST_HEADERS = {
 
 # Enable or disable spider middlewares
 # See https://docs.scrapy.org/en/latest/topics/spider-middleware.html
-SPIDER_MIDDLEWARES = {
-   "publicTriffic.middlewares.PublictrifficSpiderMiddleware": 543,
-}
+# SPIDER_MIDDLEWARES = {
+#    "publicTriffic.middlewares.PublictrifficSpiderMiddleware": 543,
+# }
 
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
@@ -65,7 +65,7 @@ SPIDER_MIDDLEWARES = {
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-   # "publicTriffic.pipelines.SaveDBPipeline": 100,
+   "publicTriffic.pipelines.SaveDBPipeline": 100,
    "publicTriffic.pipelines.SaveJsonPipeline": 300,
 }
 

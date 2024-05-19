@@ -17,8 +17,8 @@ class BaiduSpider(scrapy.Spider):
     start_urls = ["https://map.baidu.commap.baidu.com"]
 
     def start_requests(self):
-        jsonFile = open("../result/8684.json", 'r',
-                        encoding="utf-8")
+        jsonFile = open("publicTriffic/result/8684.json", 'r',
+                        encoding="GBK")
         jsonDict = json.load(jsonFile)
         urlFormat = "https://map.baidu.com/?newmap=1&reqflag=pcmap&biz=1&from=webmap&da_par=direct&pcevaname=pc4.1&qt=s&da_src=searchBox.button&wd={}&c=131&src=0&wd2={}"
         self.lineSet = set()
@@ -80,7 +80,7 @@ class BaiduSpider(scrapy.Spider):
         pathList = pathStr.split(",")
         convertPathList = []
         for i in range(0, len(pathList) - 1, 2):
-            lan ,lot = float(pathList[i]),float(pathList[i + 1])
+            lan, lot = pathList[i], pathList[i + 1]
             position = (lan, lot)
             convertPathList.append(position)
         item['path'] = convertPathList

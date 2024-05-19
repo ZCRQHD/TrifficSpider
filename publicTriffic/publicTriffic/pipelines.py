@@ -2,64 +2,102 @@
 #
 # Don't forget to add your pipeline to the ITEM_PIPELINES setting
 # See: https://docs.scrapy.org/en/latest/topics/item-pipeline.html
-import scrapy
+import hashlib
+import math
 # useful for handling different item types with a single interface
-from itemadapter import ItemAdapter
 import shelve
 from json import dump
-import peewee
 
-import pymysql
+import bd09convertor
+import scrapy
 from pympler.asizeof import asizeof
+from .ORM import *
 
-setting = shelve.open('publicTriffic/db/SQL')
-settingDict = setting['db']
-db = peewee.MySQLDatabase(
-    host=settingDict['host'],
-    port=settingDict['port'],
-    user=settingDict["user"],
-    password=settingDict['password'],
-    database=settingDict['DBname']
+x_pi = math.pi * 3000.0 / 180.0
 
-)
-
-
-class Line(peewee.Model):
-    id = peewee.CharField()
-    name = peewee.TextField()
-    pairCode = peewee.CharField()
-    preOpen = peewee.IntegerField()
-    province = peewee.TextField()
-    city = peewee.TextField()
-    company = peewee.TextField()
-
-    class Meta:
-        database = db
-        db_table = "line"
-
-
-# Line.create(id="123",
-#             name="34",
-#             preOpen=2,
-#             pairCode="zxc",
-#             province="svg",
-#             city='1',
-#             company='23',
-#             er=234
-#
-#             )
+a = 6378245.0  # ≥§∞Î÷·
+ee = 0.00669342162296594323  # ±‚¬ 
 
 
 class SaveDBPipeline:
-
+    def convert(self, lan, lot):
+        bd_lon, bd_lat = bd09convertor.convertMC2LL(lan, lot)
+        x = bd_lon - 0.0065
+        y = bd_lat - 0.006
+        z = math.sqrt(x * x + y * y) - 0.00002 * math.sin(y * x_pi)
+        theta = math.atan2(y, x) - 0.000003 * math.cos(x * x_pi)
+        gg_lng = z * math.cos(theta)
+        gg_lat = z * math.sin(theta)
+        return [gg_lng, gg_lat]
     def open_spider(self, spider):
         spider.log("DB pipline has started")
 
-    def process_item(self, item, spider):
-        pass
+    def process_item(self, item, spider: scrapy.Spider):
+        if spider.name == 'baidu':
+            Line.create(
+                id=item['uid'],
+                name=item['name'],
+                pairCode=item['pairCode'],
+                preOpen=item['preOpen'],
+                province=item['province'],
+                city=item['city'],
+                company=item['company']
+            )
+            spider.log("succcessfully save line {} id={} to datatbase".format(item['name'], item['code']))
+            for platform in item['stationList']:
+                hashResult = hashlib.sha256(platform[1])
+                platform_uid = hashResult.hexdigest()
+                result = Platform.select().where(Platform.id == platform_uid)
+                if len(result) == 0:
+                    lan, lot = platform[1].split(',')
+                    geox, geoy = self.convert(float(lan), float(lot))
+                    Platform.create(
+                        id=platform_uid,
+                        geox=geox,
+                        geoy=geoy,
+                        station=platform[0]
+
+                    )
+                    spider.log("succcessfully save platform {} id={} to datatbase".format(
+                        platform[2], platform_uid))
+                    del lan, lot, geox, geoy
+                LineStation.create(
+                    line=item['code'],
+                    platform=platform_uid
+                )
+                result = Station.select().where(Station.id == platform[0])
+                hashResult = hashlib.sha256(
+                    ",".join([item['province'], item['city'], item["name"]])
+                )
+                mainStation_uid = hashResult.hexdigest()
+                if len(result) == 0:
+                    Station.create(
+                        id=platform[0],
+                        mainStation=mainStation_uid
+                    )
+                result = MainStation.select().where(MainStation.id == mainStation_uid)
+                if len(result) == 0:
+                    MainStation.create(
+                        province=item['province'],
+                        city=item['city'],
+                        name=item['name'],
+                        id=mainStation_uid
+
+                    )
+            pathList = [
+                tuple([item['code']] + self.convert(float(lan), lot)) for lan, lot in item['path']
+            ]
+            Path.insert_many(pathList, fields=[Path.line, Path.geox, Path.geoy])
+        return item
+
+
+
+
+
 
     def close_spider(self, spider):
-        pass
+        db.close()
+        spider.log("successfully closed database")
 
 
 class SaveJsonPipeline:
@@ -87,6 +125,6 @@ class SaveJsonPipeline:
     #         print(item)
     def close_spider(self, spider):
         fileName = "publicTriffic/result/baidu.json" if spider.name == "baidu" else "publicTriffic/result/8684.json"
-        jsonFile = open(fileName, "w")
+        jsonFile = open(fileName, "w", encoding='utf-8')
         dump(self.dict, jsonFile, ensure_ascii=False)
         jsonFile.close()
