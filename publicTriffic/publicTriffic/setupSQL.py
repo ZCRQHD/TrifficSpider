@@ -6,7 +6,7 @@ port = int(input("请输入端口"))
 user = input("输入用户名")
 password = input("输入密码")
 DBname = input("输入数据库名")
-db = shelve.open('publicTriffic/db/SQL')
+db = shelve.open('db/SQL')
 SQLdict = {
     'host': host,
     'port': port,
