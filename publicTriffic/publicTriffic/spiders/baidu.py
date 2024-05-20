@@ -19,7 +19,7 @@ class BaiduSpider(scrapy.Spider):
                         encoding="utf-8")
         jsonDict = json.load(jsonFile)
         urlFormat = "https://map.baidu.com/?newmap=1&reqflag=pcmap&biz=1&from=webmap&da_par=direct&pcevaname=pc4.1&qt=s&da_src=searchBox.button&wd={}&c=131&src=0&wd2={}"
-        self.db = shelve.open('publicTriffic/db/spiderCache','w')
+        self.db = shelve.open('publicTriffic/db/spiderCache','c')
         baiduDict = {
             'line': [],
             'station': []

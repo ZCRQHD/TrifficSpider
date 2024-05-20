@@ -102,7 +102,7 @@ class SaveDBPipeline:
 
 class SaveJsonPipeline:
     def open_spider(self, spider):
-        self.db = shelve.open('publicTriffic/db/jsonCache','w')
+        self.db = shelve.open('publicTriffic/db/jsonCache','c')
 
     def process_item(self, item, spider: scrapy.Spider):
         province = item['province']
