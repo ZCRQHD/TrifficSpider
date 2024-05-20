@@ -104,7 +104,6 @@ class SaveDBPipeline:
 class SaveJsonPipeline:
     def open_spider(self, spider):
         self.db = {}
-        self.db['busData'] = {}
 
 
     def process_item(self, item, spider: scrapy.Spider):
@@ -112,17 +111,17 @@ class SaveJsonPipeline:
         city = item['city']
         busType = item['busType']
         spider.log(f"the size of {item['province']} {item['city']} {item['name']} is {asizeof(item)}")
-        if province not in self.db['busData'].keys():
-            self.db['busData'][province] = {}
-        if city not in self.db['busData'][province].keys():
-            self.db['busData'][province][city] = {} if spider.name == 'bus' else []
+        if province not in self.db.keys():
+            self.db[province] = {}
+        if city not in self.db[province].keys():
+            self.db[province][city] = {} if spider.name == 'bus' else []
         if spider.name == 'bus':
-            if busType not in self.db['busData'][province][city].keys():
-                self.db['busData'][province][city][busType] = []
-            self.db['busData'][province][city][busType].append(dict(item))
+            if busType not in self.db[province][city].keys():
+                self.db[province][city][busType] = []
+            self.db[province][city][busType].append(dict(item))
             spider.log("successfully append {} {} {} {}".format(province, city, item['busType'], item['name']))
         else:
-            self.db['busData'][province][city].append(dict(item))
+            self.db[province][city].append(dict(item))
             spider.log("successfully append {} {} {}".format(province, city,  item['name']))
 
         return item
@@ -135,7 +134,7 @@ class SaveJsonPipeline:
         fileName = "publicTriffic/result/baidu.json" if spider.name == "baidu" else "publicTriffic/result/8684.json"
         jsonFile = open(fileName, "w", encoding='utf-8')
         resultDict = {
-            'busData': self.db['busData']
+            'busData': self.db
         }
         dump(self.db, jsonFile, ensure_ascii=False)
         jsonFile.close()
