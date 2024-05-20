@@ -1,5 +1,5 @@
 
-source ./venv/bin/activate
+source ../venv/bin/activate
 cd publicTriffic
 git pull origin master:master
 python3 startBus.py
