@@ -46,9 +46,8 @@ class BusSpider(scrapy.Spider):
         for type in typeTag:
             url = f"https://{cityName}.8684.cn" + type['href']
             bustype = type.text
-            # self.log("get {} {} {}".format(provinceName, cityItem, bustype))
             yield Request(url, meta={"cityItem": cityName, "province": provinceName, 'busType': bustype
-                , 'cityUrl': cityName}, callback=self.typePage, priority=15)
+                , 'cityUrl': cityName}, callback=self.typePage, priority=30)
 
     def typePage(self,response):
         """
@@ -69,7 +68,7 @@ class BusSpider(scrapy.Spider):
             item['code'] = url.split('_')[1]
             item['name'] = line.text
             # self.log("get {} {} {} {}".format(item['province'], item['city'],item['busType'],item['name']))
-            yield Request(url,meta={'item':item},callback=self.linePage,priority=20)
+            yield Request(url,meta={'item':item},callback=self.linePage,priority=40)
 
     def linePage(self,response):
         tag = BeautifulSoup(str(response.text), 'lxml')

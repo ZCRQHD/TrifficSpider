@@ -34,8 +34,9 @@ class SaveDBPipeline:
 
     def process_item(self, item, spider: scrapy.Spider):
         if spider.name == 'baidu':
+            result = Line.select().where(Line.id == item['code'])
             Line.create(
-                id=item['uid'],
+                id=item['code'],
                 name=item['name'],
                 pairCode=item['pairCode'],
                 preOpen=item['preOpen'],
@@ -102,18 +103,28 @@ class SaveDBPipeline:
 
 class SaveJsonPipeline:
     def open_spider(self, spider):
-        self.db = shelve.open('publicTriffic/db/jsonCache','c')
+        self.db = {}
+        self.db['busData'] = {}
+
 
     def process_item(self, item, spider: scrapy.Spider):
         province = item['province']
         city = item['city']
+        busType = item['busType']
         spider.log(f"the size of {item['province']} {item['city']} {item['name']} is {asizeof(item)}")
-        self.db['busData'][province] = self.db['busData'].get(province, {})
-        self.db['busData'][province][city] = self.db['busData'][province].get(city, {})
-        self.db['busData'][province][city][item['busType']] = self.db['busData'][province][city] \
-            .get(item['busType'], [])
-        self.db['busData'][province][city][item['busType']].append(dict(item))
-        spider.log("successfully append {} {} {} {}".format(province, city, item['busType'], item['name']))
+        if province not in self.db['busData'].keys():
+            self.db['busData'][province] = {}
+        if city not in self.db['busData'][province].keys():
+            self.db['busData'][province][city] = {} if spider.name == 'bus' else []
+        if spider.name == 'bus':
+            if busType not in self.db['busData'][province][city].keys():
+                self.db['busData'][province][city][busType] = []
+            self.db['busData'][province][city][busType].append(dict(item))
+            spider.log("successfully append {} {} {} {}".format(province, city, item['busType'], item['name']))
+        else:
+            self.db['busData'][province][city].append(dict(item))
+            spider.log("successfully append {} {} {}".format(province, city,  item['name']))
+
         return item
 
     #
