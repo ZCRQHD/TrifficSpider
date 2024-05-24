@@ -46,7 +46,7 @@ class BusSpider(scrapy.Spider):
         for type in typeTag:
             url = f"https://{cityName}.8684.cn" + type['href']
             bustype = type.text
-            yield Request(url, meta={"cityItem": cityName, "province": provinceName, 'busType': bustype
+            yield Request(url, meta={"cityItem": cityItem, "province": provinceName, 'busType': bustype
                 , 'cityUrl': cityName}, callback=self.typePage, priority=30)
 
     def typePage(self,response):

@@ -39,10 +39,10 @@ class MainStation:
         self.city = city
         self.name = name
         self.stationList = []
-        self.ID = self.getID
+        self.ID = self.getID()
 
     def getID(self):
-        hash = hashlib.sha256(f"{self.province}/{self.city}:{self.name}")
+        hash = hashlib.sha256(bytes(f"{self.province}/{self.city}:{self.name}"))
         return hash.hexdigest()
 
     def appendStation(self, station):

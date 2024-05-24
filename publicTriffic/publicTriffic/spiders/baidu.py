@@ -26,20 +26,26 @@ class BaiduSpider(scrapy.Spider):
         }
         self.db["baidu"] = baiduDict
         # 这两个是去重用的
-        for provinceName in jsonDict['busData'].keys():
-            province = jsonDict['busData'].pop(provinceName)
+        for provinceName in jsonDict.keys():
+            province = jsonDict.pop(provinceName)
             for cityName in province.keys():
                 city = province.pop(cityName)
                 for typeName in city.keys():
                     type = city.pop(typeName)
                     for line in type:
                         url = urlFormat.format(line['name'], line['city'])
-                        yield Request(url, callback=self.searchParse, priority=10, )
-    def searchParse(self, response):
+                        yield Request(url, callback=self.searchParse, priority=5, meta={
+                            "city": cityName,
+                            "province": provinceName,
+                            'name': line['name']
+
+                        })
+
+    def searchParse(self, response: Response):
         searchJson = json.loads(response.text)
         lineUrl = "https://map.baidu.com/?qt=bsl&tps=&newmap=1&uid={}&c=131"
         targetLine = searchJson['content']
-
+        meta = response.request.meta
         for place in targetLine:
             classList = [i[0] for i in place['cla']]
             if 904 in classList:
@@ -51,7 +57,10 @@ class BaiduSpider(scrapy.Spider):
             uid = place['uid']
             if uid not in self.db['baidu']['line']:
                 self.db['baidu']['line'].append(uid)
-                yield Request(lineUrl.format(uid), callback=self.lineParse, priority=5, meta={
+
+                self.log("successfully search {} {} {} . uid={}".format(
+                    meta['province'], meta['city'], meta['name'], uid))
+                yield Request(lineUrl.format(uid), callback=self.lineParse, priority=10, meta={
                     'type': lineType
                 })
             else:
@@ -104,7 +113,7 @@ class BaiduSpider(scrapy.Spider):
         stationJson = json.loads(response.text)
         meta = response.request.meta
         for station in stationJson['content']:
-            typeList = [type for type in station['cla']]
+            typeList = [stationType[0] for stationType in station['cla']]
             if 22 in typeList:
                 for line in station['blinfo']:
                     if line['uid'] not in self.db['baidu']['line']:

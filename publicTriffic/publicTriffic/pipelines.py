@@ -35,18 +35,19 @@ class SaveDBPipeline:
     def process_item(self, item, spider: scrapy.Spider):
         if spider.name == 'baidu':
             result = Line.select().where(Line.id == item['code'])
-            Line.create(
-                id=item['code'],
-                name=item['name'],
-                pairCode=item['pairCode'],
-                preOpen=item['preOpen'],
-                province=item['province'],
-                city=item['city'],
-                company=item['company']
-            )
-            spider.log("succcessfully save line {} id={} to datatbase".format(item['name'], item['code']))
+            if len(result) == 0:
+                Line.create(
+                    id=item['code'],
+                    name=item['name'],
+                    pairCode=item['pairCode'],
+                    preOpen=item['preOpen'],
+                    province=item['province'],
+                    city=item['city'],
+                    company=item['company']
+                )
+                spider.log("succcessfully save line {} id={} to datatbase".format(item['name'], item['code']))
             for platform in item['stationList']:
-                hashResult = hashlib.sha256(platform[1])
+                hashResult = hashlib.sha256(bytes(platform[1]))
                 platform_uid = hashResult.hexdigest()
                 result = Platform.select().where(Platform.id == platform_uid)
                 if len(result) == 0:
@@ -68,7 +69,7 @@ class SaveDBPipeline:
                 )
                 result = Station.select().where(Station.id == platform[0])
                 hashResult = hashlib.sha256(
-                    ",".join([item['province'], item['city'], item["name"]])
+                    bytes(",".join([item['province'], item['city'], item["name"]]))
                 )
                 mainStation_uid = hashResult.hexdigest()
                 if len(result) == 0:
