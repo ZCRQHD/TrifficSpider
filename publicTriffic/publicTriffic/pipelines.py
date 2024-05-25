@@ -29,6 +29,7 @@ class SaveDBPipeline:
         gg_lng = z * math.cos(theta)
         gg_lat = z * math.sin(theta)
         return [gg_lng, gg_lat]
+
     def open_spider(self, spider):
         spider.log("DB pipline has started")
 
@@ -47,12 +48,36 @@ class SaveDBPipeline:
                 )
                 spider.log("succcessfully save line {} id={} to datatbase".format(item['name'], item['code']))
             for platform in item['stationList']:
-                hashResult = hashlib.sha256(bytes(platform[1]))
+                hashResult = hashlib.sha256(bytes(platform[1].encode()))
                 platform_uid = hashResult.hexdigest()
-                result = Platform.select().where(Platform.id == platform_uid)
-                if len(result) == 0:
-                    lan, lot = platform[1].split(',')
-                    geox, geoy = self.convert(float(lan), float(lot))
+                station_uid = platform[0]
+                hashResult = hashlib.sha256(
+                    bytes(",".join([item['province'], item['city'], item["name"]]).encode())
+                )
+                mainStation_uid = hashResult.hexdigest()
+
+                try:
+                    MainStation.create(
+                        province=item['province'],
+                        city=item['city'],
+                        name=platform[2],
+                        id=mainStation_uid
+
+                    )
+                except IntegrityError:
+                    spider.log(f"main station named{platform[2]} uid={mainStation_uid} has already exists")
+
+                try:
+                    Station.create(
+                        id=platform[0],
+                        mainStation=mainStation_uid
+                    )
+                except IntegrityError:
+                    spider.log(f"station named{platform[2]} uid={station_uid} has already exists")
+                lan, lot = platform[1].split(',')
+                geox, geoy = self.convert(float(lan), float(lot))
+                try:
+
                     Platform.create(
                         id=platform_uid,
                         geox=geox,
@@ -62,40 +87,25 @@ class SaveDBPipeline:
                     )
                     spider.log("succcessfully save platform {} id={} to datatbase".format(
                         platform[2], platform_uid))
-                    del lan, lot, geox, geoy
-                LineStation.create(
-                    line=item['code'],
-                    platform=platform_uid
-                )
-                result = Station.select().where(Station.id == platform[0])
-                hashResult = hashlib.sha256(
-                    bytes(",".join([item['province'], item['city'], item["name"]]))
-                )
-                mainStation_uid = hashResult.hexdigest()
-                if len(result) == 0:
-                    Station.create(
-                        id=platform[0],
-                        mainStation=mainStation_uid
+                except IntegrityError:
+                    spider.log(f"platform named{platform[2]} uid={platform_uid} at {geox},{geoy} has already exists")
+                del lan, lot, geox, geoy
+                try:
+                    LineStation.create(
+                        line=item['code'],
+                        platform=platform_uid
                     )
-                result = MainStation.select().where(MainStation.id == mainStation_uid)
-                if len(result) == 0:
-                    MainStation.create(
-                        province=item['province'],
-                        city=item['city'],
-                        name=item['name'],
-                        id=mainStation_uid
+                except IntegrityError as e:
+                    spider.log(e)
 
-                    )
-            pathList = [
-                tuple([item['code']] + self.convert(float(lan), lot)) for lan, lot in item['path']
-            ]
-            Path.insert_many(pathList, fields=[Path.line, Path.geox, Path.geoy])
+            try:
+                pathList = [
+                    tuple([item['code']] + self.convert(float(lan), float(lot))) for lan, lot in item['path']
+                ]
+                Path.insert_many(pathList, fields=[Path.line, Path.geox, Path.geoy])
+            except IntegrityError as e:
+                spider.log(e)
         return item
-
-
-
-
-
 
     def close_spider(self, spider):
         db.close()
@@ -106,24 +116,24 @@ class SaveJsonPipeline:
     def open_spider(self, spider):
         self.db = {}
 
-
     def process_item(self, item, spider: scrapy.Spider):
-        province = item['province']
-        city = item['city']
-        busType = item['busType']
-        spider.log(f"the size of {item['province']} {item['city']} {item['name']} is {asizeof(item)}")
-        if province not in self.db.keys():
-            self.db[province] = {}
-        if city not in self.db[province].keys():
-            self.db[province][city] = {} if spider.name == 'bus' else []
-        if spider.name == 'bus':
-            if busType not in self.db[province][city].keys():
-                self.db[province][city][busType] = []
-            self.db[province][city][busType].append(dict(item))
-            spider.log("successfully append {} {} {} {}".format(province, city, item['busType'], item['name']))
-        else:
-            self.db[province][city].append(dict(item))
-            spider.log("successfully append {} {} {}".format(province, city,  item['name']))
+        if spider.name == "bus":
+            province = item['province']
+            city = item['city']
+            busType = item['busType']
+            spider.log(f"the size of {item['province']} {item['city']} {item['name']} is {asizeof(item)}")
+            if province not in self.db.keys():
+                self.db[province] = {}
+            if city not in self.db[province].keys():
+                self.db[province][city] = {} if spider.name == 'bus' else []
+            if spider.name == 'bus':
+                if busType not in self.db[province][city].keys():
+                    self.db[province][city][busType] = []
+                self.db[province][city][busType].append(dict(item))
+                spider.log("successfully append {} {} {} {}".format(province, city, item['busType'], item['name']))
+            else:
+                self.db[province][city].append(dict(item))
+                spider.log("successfully append {} {} {}".format(province, city, item['name']))
 
         return item
 

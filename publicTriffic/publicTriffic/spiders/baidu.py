@@ -95,7 +95,8 @@ class BaiduSpider(scrapy.Spider):
             position = (lan, lot)
             convertPathList.append(position)
         item['path'] = convertPathList
-        stationList = [(station['uid'], station['geo'].split("|")[1], station['name'])
+        stationList = [(station['uid'], station['geo'].split("|")[2][:-1]  # 你个百度，好好的路径不写，非得来这出，贱不贱啊~
+                        , station['name'])
                        for station in content['stations']]
         item['stationList'] = stationList
         if lineType == 'subway':

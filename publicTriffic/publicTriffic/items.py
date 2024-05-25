@@ -42,7 +42,7 @@ class MainStation:
         self.ID = self.getID()
 
     def getID(self):
-        hash = hashlib.sha256(bytes(f"{self.province}/{self.city}:{self.name}"))
+        hash = hashlib.sha256(bytes(f"{self.province}/{self.city}:{self.name}".encode()))
         return hash.hexdigest()
 
     def appendStation(self, station):
