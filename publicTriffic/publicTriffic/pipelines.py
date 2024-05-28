@@ -12,7 +12,7 @@ import bd09convertor
 import scrapy
 from pympler.asizeof import asizeof
 from .ORM import *
-
+import json
 x_pi = math.pi * 3000.0 / 180.0
 
 a = 6378245.0  # 长半轴
@@ -35,59 +35,50 @@ class SaveDBPipeline:
 
     def process_item(self, item, spider: scrapy.Spider):
         if spider.name == 'baidu':
-            result = Line.select().where(Line.id == item['code'])
-            if len(result) == 0:
+            try:
+                startStation = item['stationList'][0][0]
+                endStation = item['stationList'][-1][0]
+                convertList = [
+                    self.convert(float(lan), float(lot)) for lan, lot in item['path']
+                ]
+                pathJson = json.dumps(convertList)
                 Line.create(
-                    id=item['code'],
+                    uid=item['code'],
                     name=item['name'],
                     pairCode=item['pairCode'],
                     preOpen=item['preOpen'],
                     province=item['province'],
                     city=item['city'],
-                    company=item['company']
+                    company=item['company'],
+                    startStation=startStation,
+                    endStation=endStation,
+                    path=pathJson
                 )
                 spider.log("succcessfully save line {} id={} to datatbase".format(item['name'], item['code']))
+            except IntegrityError as e:
+                spider.log('the line uid={} has existed'.format(item['code']))
             for platform in item['stationList']:
-                hashResult = hashlib.sha256(bytes(platform[1].encode()))
-                platform_uid = hashResult.hexdigest()
-                station_uid = platform[0]
-                hashResult = hashlib.sha256(
-                    bytes(",".join([item['province'], item['city'], item["name"]]).encode())
-                )
-                mainStation_uid = hashResult.hexdigest()
 
-                try:
-                    MainStation.create(
-                        province=item['province'],
-                        city=item['city'],
-                        name=platform[2],
-                        id=mainStation_uid
 
-                    )
-                except IntegrityError:
-                    spider.log(f"main station named{platform[2]} uid={mainStation_uid} has already exists")
-
-                try:
-                    Station.create(
-                        id=platform[0],
-                        mainStation=mainStation_uid
-                    )
-                except IntegrityError:
-                    spider.log(f"station named{platform[2]} uid={station_uid} has already exists")
+                platformHashResult = hashlib.sha256(bytes(platform[1].encode()))
+                platform_uid = platformHashResult.hexdigest()
                 lan, lot = platform[1].split(',')
                 geox, geoy = self.convert(float(lan), float(lot))
-                try:
+                platformResult = Platform.select().where(Platform.uid == platform_uid)
+                print([i.id for i in platformResult])
+                if platform_uid not in [i.id for i in platformResult]:
 
                     Platform.create(
-                        id=platform_uid,
+                        uid=platform_uid,
                         geox=geox,
                         geoy=geoy,
-                        station=platform[0]
+                        name=platform[2],
+
 
                     )
                     spider.log("succcessfully save platform {} id={} to datatbase".format(
                         platform[2], platform_uid))
-                except IntegrityError:
+                else:
                     spider.log(f"platform named{platform[2]} uid={platform_uid} at {geox},{geoy} has already exists")
                 del lan, lot, geox, geoy
                 try:
@@ -95,16 +86,10 @@ class SaveDBPipeline:
                         line=item['code'],
                         platform=platform_uid
                     )
+                    spider.log('successfully  connect line with platform')
                 except IntegrityError as e:
-                    spider.log(e)
+                    spider.log('line has been connect with platform')
 
-            try:
-                pathList = [
-                    tuple([item['code']] + self.convert(float(lan), float(lot))) for lan, lot in item['path']
-                ]
-                Path.insert_many(pathList, fields=[Path.line, Path.geox, Path.geoy])
-            except IntegrityError as e:
-                spider.log(e)
         return item
 
     def close_spider(self, spider):

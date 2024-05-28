@@ -14,44 +14,30 @@ db = MySQLDatabase(
 
 
 class Line(Model):
-    id = CharField()
+    uid = CharField()
     name = TextField()
     pairCode = CharField()
     preOpen = IntegerField()
     province = TextField()
     city = TextField()
     company = TextField()
+    startStation = CharField()
+    endStation = CharField()
+    path = CharField()
 
     class Meta:
         database = db
         db_table = "line"
 
 
-class MainStation(Model):
-    id = CharField()
-    province = TextField()
-    city = TextField()
-    name = TextField()
-
-    class Meta:
-        database = db
-        db_table = "mainStation"
-
-
-class Station(Model):
-    id = CharField()
-    mainStation = CharField()
-
-    class Meta:
-        database = db
-        db_table = "station"
 
 
 class Platform(Model):
-    id = CharField()
+    uid = CharField()
     station = CharField()
     geox = DoubleField()
     geoy = DoubleField()
+    name = CharField()
 
     class Meta:
         database = db
@@ -67,11 +53,12 @@ class LineStation(Model):
         db_table = "lineStation"
 
 
-class Path(Model):
-    line = CharField()
-    geox = DoubleField()
-    geoy = DoubleField()
-
-    class Meta:
-        database = db
-        db_table = "path"
+# class Path(Model):
+#     line = CharField()
+#     geox = DoubleField()
+#     geoy = DoubleField()
+#     order = IntegerField()
+#
+#     class Meta:
+#         database = db
+#         db_table = "path"
