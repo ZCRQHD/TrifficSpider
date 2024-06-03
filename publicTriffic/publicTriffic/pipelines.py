@@ -20,6 +20,7 @@ ee = 0.00669342162296594323  # 扁率
 
 
 class SaveDBPipeline:
+    MAX_ERROR = 9e-7 # 一米对应的圆心角
     def convert(self, lan, lot):
         bd_lon, bd_lat = bd09convertor.convertMC2LL(lan, lot)
         x = bd_lon - 0.0065
@@ -35,13 +36,33 @@ class SaveDBPipeline:
 
     def process_item(self, item, spider: scrapy.Spider):
         if spider.name == 'baidu':
-            try:
+            for platform in item['stationList']:
+
+                geox, geoy = platform[1].split(',')
+                lan, lot = self.convert(float(geox), float(geoy))
+                platformResult = Platform.get_or_none(
+                    Platform.uid == platform[0]
+                    # and Platform.geox - lan <= self.MAX_ERROR
+                    # and Platform.geoy - lot <= self.MAX_ERROR
+                )
+                if platformResult is None:
+
+                    Platform.create(
+                        uid = platform[0],
+                        geox=lan,
+                        geoy=lot,
+                        name=platform[2]
+                    )
+                    spider.log(f"successfully add platform {platform[2]} uid={platform[0]} ")
+                else:
+                    spider.log(f"{platform[2]} uid={platform[0]} has already existed")
+                del geox,geoy,lan,lot,platformResult
+            lineResult = Line.get_or_none(Line.uid == item['code'])
+            if lineResult is None:
                 startStation = item['stationList'][0][0]
                 endStation = item['stationList'][-1][0]
-                convertList = [
-                    self.convert(float(lan), float(lot)) for lan, lot in item['path']
-                ]
-                pathJson = json.dumps(convertList)
+                pathList = [self.convert(float(lan),float(lot)) for lan,lot in item['path']]
+                pathStr = json.dumps(pathList)
                 Line.create(
                     uid=item['code'],
                     name=item['name'],
@@ -49,46 +70,16 @@ class SaveDBPipeline:
                     preOpen=item['preOpen'],
                     province=item['province'],
                     city=item['city'],
-                    company=item['company'],
                     startStation=startStation,
                     endStation=endStation,
-                    path=pathJson
+                    path = pathStr
+
+
+
                 )
-                spider.log("succcessfully save line {} id={} to datatbase".format(item['name'], item['code']))
-            except IntegrityError as e:
-                spider.log('the line uid={} has existed'.format(item['code']))
-            for platform in item['stationList']:
-
-
-                platformHashResult = hashlib.sha256(bytes(platform[1].encode()))
-                platform_uid = platformHashResult.hexdigest()
-                lan, lot = platform[1].split(',')
-                geox, geoy = self.convert(float(lan), float(lot))
-                platformResult = Platform.select().where(Platform.uid == platform_uid)
-                print([i.id for i in platformResult])
-                if platform_uid not in [i.id for i in platformResult]:
-
-                    Platform.create(
-                        uid=platform_uid,
-                        geox=geox,
-                        geoy=geoy,
-                        name=platform[2],
-
-
-                    )
-                    spider.log("succcessfully save platform {} id={} to datatbase".format(
-                        platform[2], platform_uid))
-                else:
-                    spider.log(f"platform named{platform[2]} uid={platform_uid} at {geox},{geoy} has already exists")
-                del lan, lot, geox, geoy
-                try:
-                    LineStation.create(
-                        line=item['code'],
-                        platform=platform_uid
-                    )
-                    spider.log('successfully  connect line with platform')
-                except IntegrityError as e:
-                    spider.log('line has been connect with platform')
+                spider.log(f"successfully add line {item['name']} uid={item['code']} ")
+            else:
+                spider.log(f"{item['name']} uid={item['code']} has already existed")
 
         return item
 

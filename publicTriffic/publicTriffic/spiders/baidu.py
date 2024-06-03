@@ -113,17 +113,17 @@ class BaiduSpider(scrapy.Spider):
     def stationParse(self, response):
         stationJson = json.loads(response.text)
         meta = response.request.meta
-        for station in stationJson['content']:
-            typeList = [stationType[0] for stationType in station['cla']]
-            if 22 in typeList:
-                for line in station['blinfo']:
-                    if line['uid'] not in self.db['baidu']['line']:
-                        lineUrl = "https://map.baidu.com/?qt=bsl&tps=&newmap=1&uid={}&c=131"
-                        uid = line['uid']
-                        self.db['baidu']['line'].append(uid)
+        station = stationJson['content']
+        typeList = [stationType[0] for stationType in station['cla']]
+        if 22 in typeList:
+            for line in station['blinfo']:
+                if line['uid'] not in self.db['baidu']['line']:
+                    lineUrl = "https://map.baidu.com/?qt=bsl&tps=&newmap=1&uid={}&c=131"
+                    uid = line['uid']
+                    self.db['baidu']['line'].append(uid)
 
-                        lineType = "bus" if 214 in typeList else "subway"
-                        yield Request(lineUrl.format(uid), callback=self.lineParse, priority=5, meta={
+                    lineType = "bus" if 214 in typeList else "subway"
+                    yield Request(lineUrl.format(uid), callback=self.lineParse, priority=5, meta={
                             'type': lineType
                         })
 

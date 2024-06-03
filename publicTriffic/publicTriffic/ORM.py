@@ -14,6 +14,7 @@ db = MySQLDatabase(
 
 
 class Line(Model):
+    uuid = IntegerField(primary_key=True)
     uid = CharField()
     name = TextField()
     pairCode = CharField()
@@ -33,8 +34,7 @@ class Line(Model):
 
 
 class Platform(Model):
-    uid = CharField()
-    station = CharField()
+    uid = CharField(primary_key=True)
     geox = DoubleField()
     geoy = DoubleField()
     name = CharField()
