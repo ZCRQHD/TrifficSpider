@@ -36,6 +36,7 @@ class SaveDBPipeline:
 
     def process_item(self, item, spider: scrapy.Spider):
         if spider.name == 'baidu':
+            platformList = []
             for platform in item['stationList']:
 
                 geox, geoy = platform[1].split(',')
@@ -53,8 +54,12 @@ class SaveDBPipeline:
                         geoy=lot,
                         name=platform[2]
                     )
+                    platformList.append(platform[0])
                     spider.log(f"successfully add platform {platform[2]} uid={platform[0]} ")
                 else:
+                    platformList.append(
+                        platformResult.uid
+                    )
                     spider.log(f"{platform[2]} uid={platform[0]} has already existed")
                 del geox,geoy,lan,lot,platformResult
             lineResult = Line.get_or_none(Line.uid == item['code'])
@@ -80,6 +85,22 @@ class SaveDBPipeline:
                 spider.log(f"successfully add line {item['name']} uid={item['code']} ")
             else:
                 spider.log(f"{item['name']} uid={item['code']} has already existed")
+            for platform_uid in platformList:
+
+                lineStationResult = LineStation.get_or_none(
+                    line=item['code'],
+                    platform=platform_uid
+                )
+                if lineStationResult is None:
+                    LineStation.create(
+
+                        line=item['code'],
+                        platform=platform_uid
+                    )
+                    spider.log(f"successfully connect line={item['code']} and platform={platform_uid} ")
+                else:
+                    spider.log(f"line={item['code']} and platform={platform_uid} has already connect")
+
 
         return item
 

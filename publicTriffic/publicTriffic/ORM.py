@@ -14,8 +14,7 @@ db = MySQLDatabase(
 
 
 class Line(Model):
-    uuid = IntegerField(primary_key=True)
-    uid = CharField()
+    uid = CharField(primary_key=True)
     name = TextField()
     pairCode = CharField()
     preOpen = IntegerField()
@@ -45,10 +44,11 @@ class Platform(Model):
 
 
 class LineStation(Model):
-    line = CharField()
+    line = IntegerField()
     platform = CharField()
 
     class Meta:
+        primary_key = CompositeKey('line', 'platform')
         database = db
         db_table = "lineStation"
 
