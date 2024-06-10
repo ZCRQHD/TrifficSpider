@@ -117,15 +117,19 @@ class BaiduSpider(scrapy.Spider):
         typeList = [stationType[0] for stationType in station['cla']]
         if 22 in typeList:
             for line in station['blinfo']:
-                if line['uid'] not in self.db['baidu']['line']:
+                uid = line['uid']
+                if uid not in self.db['baidu']['line']:
                     lineUrl = "https://map.baidu.com/?qt=bsl&tps=&newmap=1&uid={}&c=131"
-                    uid = line['uid']
+
                     self.db['baidu']['line'].append(uid)
 
                     lineType = "bus" if 214 in typeList else "subway"
-                    yield Request(lineUrl.format(uid), callback=self.lineParse, priority=5, meta={
+                    self.log("successfully add station={} line={} ".format(station['name'],uid))
+                    yield Request(lineUrl.format(uid), callback=self.lineParse, priority=10, meta={
                             'type': lineType
                         })
+                else:
+                    self.log("station={} line={} has already exists".format(station['name'],uid))
 
 
 
