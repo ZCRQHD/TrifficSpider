@@ -26,11 +26,11 @@ class BaiduSpider(scrapy.Spider):
         }
         self.db["baidu"] = baiduDict
         # 这两个是去重用的
-        for provinceName in jsonDict.keys():
+        for provinceName in list(jsonDict.keys()):
             province = jsonDict.pop(provinceName)
-            for cityName in province.keys():
+            for cityName in list( province.keys()):
                 city = province.pop(cityName)
-                for typeName in city.keys():
+                for typeName in list(city.keys()):
                     type = city.pop(typeName)
                     for line in type:
                         url = urlFormat.format(line['name'], line['city'])
