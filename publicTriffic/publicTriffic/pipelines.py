@@ -14,7 +14,7 @@ from pympler.asizeof import asizeof
 from .ORM import *
 import json
 x_pi = math.pi * 3000.0 / 180.0
-
+import logging
 a = 6378245.0  # 长半轴
 ee = 0.00669342162296594323  # 扁率
 
@@ -32,7 +32,7 @@ class SaveDBPipeline:
         return [gg_lng, gg_lat]
 
     def open_spider(self, spider):
-        spider.log("DB pipline has started")
+        spider.log("DB pipline has started",level=logging.INFO)
 
     def process_item(self, item, spider: scrapy.Spider):
         if spider.name == 'baidu':
@@ -43,8 +43,6 @@ class SaveDBPipeline:
                 lan, lot = self.convert(float(geox), float(geoy))
                 platformResult = Platform.get_or_none(
                     Platform.uid == platform[0]
-                    # and Platform.geox - lan <= self.MAX_ERROR
-                    # and Platform.geoy - lot <= self.MAX_ERROR
                 )
                 if platformResult is None:
 
@@ -57,6 +55,12 @@ class SaveDBPipeline:
                     platformList.append(platform[0])
                     spider.log(f"successfully add platform {platform[2]} uid={platform[0]} ")
                 else:
+                    if platformResult.geox == lan and platformResult.geoy == lot:
+                        spider.log("platform the position of uid={}".format(platform[0]))
+                    else:
+                        platformResult.geox = lan
+                        platformResult.geoy = lot
+                        platformResult.save()
                     platformList.append(
                         platformResult.uid
                     )
@@ -77,7 +81,8 @@ class SaveDBPipeline:
                     city=item['city'],
                     startStation=startStation,
                     endStation=endStation,
-                    path = pathStr
+                    path = pathStr,
+                    company=item['company']
 
 
 

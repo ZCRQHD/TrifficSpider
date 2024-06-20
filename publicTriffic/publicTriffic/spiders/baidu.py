@@ -18,7 +18,7 @@ class BaiduSpider(scrapy.Spider):
         jsonFile = open("publicTriffic/result/8684.json", 'r',
                         encoding="utf-8")
         jsonDict = json.load(jsonFile)
-        urlFormat = "https://map.baidu.com/?newmap=1&reqflag=pcmap&biz=1&from=webmap&da_par=direct&pcevaname=pc4.1&qt=s&da_src=searchBox.button&wd={}&c=131&src=0&wd2={}"
+        urlFormat = "https://map.baidu.com/?newmap=1&reqflag=pcmap&biz=1&from=webmap&da_par=direct&pcevaname=pc4.1&qt=s&da_src=searchBox.button&wd={}&src=0&wd2={}"
         self.db = shelve.open('publicTriffic/db/spiderCache','c')
         baiduDict = {
             'line': [],
@@ -43,7 +43,7 @@ class BaiduSpider(scrapy.Spider):
 
     def searchParse(self, response: Response):
         searchJson = json.loads(response.text)
-        lineUrl = "https://map.baidu.com/?qt=bsl&tps=&newmap=1&uid={}&c=131"
+        lineUrl = "https://map.baidu.com/?qt=bsl&tps=&newmap=1&uid={}"
         targetLine = searchJson['content']
         meta = response.request.meta
         for place in targetLine:
