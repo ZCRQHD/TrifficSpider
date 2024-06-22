@@ -37,13 +37,15 @@ class BaiduSpider(scrapy.Spider):
                         yield Request(url, callback=self.searchParse, priority=5, meta={
                             "city": cityName,
                             "province": provinceName,
-                            'name': line['name']
+                            'name': line['name'],
+
 
                         })
 
     def searchParse(self, response: Response):
         searchJson = json.loads(response.text)
-        lineUrl = "https://map.baidu.com/?qt=bsl&tps=&newmap=1&uid={}"
+        cityCode = searchJson['current_city']['code']
+        lineUrl = "https://map.baidu.com/?qt=bsl&tps=&newmap=1&uid={}&c={}&gsign=a2f7723340d3f70225ecb5222306caa8&pcevaname=pc4.1&newfrom=zhuzhan_webmap"
         targetLine = searchJson['content']
         meta = response.request.meta
         for place in targetLine:
@@ -60,7 +62,7 @@ class BaiduSpider(scrapy.Spider):
 
                 self.log("successfully search {} {} {} . uid={}".format(
                     meta['province'], meta['city'], meta['name'], uid))
-                yield Request(lineUrl.format(uid), callback=self.lineParse, priority=10, meta={
+                yield Request(lineUrl.format(uid,cityCode), callback=self.lineParse, priority=10, meta={
                     'type': lineType
                 })
             else:
