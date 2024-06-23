@@ -1,3 +1,4 @@
+import logging
 import shelve
 
 
@@ -61,7 +62,7 @@ class BaiduSpider(scrapy.Spider):
                 self.db['baidu']['line'].append(uid)
 
                 self.log("successfully search {} {} {} . uid={}".format(
-                    meta['province'], meta['city'], meta['name'], uid))
+                    meta['province'], meta['city'], meta['name'], uid),level=logging.INFO)
                 yield Request(lineUrl.format(uid,cityCode), callback=self.lineParse, priority=10, meta={
                     'type': lineType
                 })
@@ -103,12 +104,17 @@ class BaiduSpider(scrapy.Spider):
         item['stationList'] = stationList
         if lineType == 'subway':
             item['color'] = content['line_color']
-
+        self.log(
+            "find {}, province={},city={},name={}.the number of station is {}".format(
+                item['code'],item['province'],item['city'],item['name'],len(item['stationList'])
+            ),
+            level=logging.INFO
+        )
         for station in stationList:
             if station[0] not in self.db['baidu']['station']:
                 self.db['baidu']['station'].append(station[0])
                 url = f"https://map.baidu.com/?uid={station[0]}&ugc_type=3&ugc_ver=1&qt=detailConInfo&device_ratio=2&compat=1&t=1714795401159&auth=bf6H8U7K2IFHGd@x@5VeC6B0Xbf=5HC4uxNxENTHBTRtyOOyyIFIAUvCuyAT9xXwvkGcuVtvvhguVtvyheuVtvCMGuVtvCQMuVtvIPcuxtw8wkv7uvZgMuVtv@vcuVtvc3CuVtvcPPuVtveGvuxVtEnrR1GDdw8E62qvyMuJx7OIgHvhgMuzVVtvrMhuzVtGccZcuxtf0wd0vyOyFOUICUy&seckey=6cm9oCWblWcXJH0b4zVSMCw/zCVTeM6PwLZ6AwxhTtOXbc4JhCaIUuGhXM3GdiGSVrIeM0WWKTAXL2nEuexD5w==,6cm9oCWblWcXJH0b4zVSMCw_zCVTeM6PwLZ6AwxhTtPtxDiQY_xf54N3FJhucp5GGHOByJ6fEHfcjUqr7h8GZmHDi1rcUs1YhedmiJPShVNbacxRGMhFMrTNXpjaBXOkAXmClDAJRybwqL2Xk-Q5f1W7da-MW97xRlJMgxuYRd9C8fT5C8EOxGYpBGON-go4GStjrJRLQBinQFo7O3mlcA&pcevaname=pc4.1&newfrom=zhuzhan_webmap"
-                yield Request(url=url, callback=self.stationParse, priority=20, meta={})
+                yield Request(url=url, callback=self.stationParse, priority=20, meta={'uid':station[0]})
 
         yield item
 
@@ -118,22 +124,24 @@ class BaiduSpider(scrapy.Spider):
         station = stationJson['content']
         typeList = [stationType[0] for stationType in station['cla']]
         if 22 in typeList:
+            lineCount = 0
             for line in station['blinfo']:
                 uid = line['uid']
                 if uid not in self.db['baidu']['line']:
+                    lineCount += 1
                     lineUrl = "https://map.baidu.com/?qt=bsl&tps=&newmap=1&uid={}&c=131"
 
                     self.db['baidu']['line'].append(uid)
 
                     lineType = "bus" if 214 in typeList else "subway"
-                    self.log("successfully add station={} line={} ".format(station['name'],uid))
+                    self.log("successfully add  line={} from station={}".format(uid,station['name']))
                     yield Request(lineUrl.format(uid), callback=self.lineParse, priority=10, meta={
                             'type': lineType
                         })
                 else:
                     self.log("station={} line={} has already exists".format(station['name'],uid))
-
-
-
+            self.log("successfully find station={},the number of line is {}".format(station['name'],lineCount),level=logging.INFO)
+        else:
+            self.log("don't find station,uid={}".format(meta['uid']),level=logging.INFO)
 
 

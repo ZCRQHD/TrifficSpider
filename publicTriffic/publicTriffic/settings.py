@@ -29,7 +29,7 @@ DOWNLOAD_DELAY = 1
 # The download delay setting will honor only one of:
 CONCURRENT_REQUESTS_PER_DOMAIN = 1024
 CONCURRENT_REQUESTS_PER_IP = 1024
-DEPTH_PRIORITY = -10
+DEPTH_PRIORITY = -20
 # Disable cookies (enabled by default)
 #COOKIES_ENABLED = False
 
@@ -42,6 +42,7 @@ DEFAULT_REQUEST_HEADERS = {
    "Accept-Language": "en",
    "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36 Edg/116.0.1938.69"
 }
+LOG_LEVEL = 'INFO'
 
 
 # Enable or disable spider middlewares
