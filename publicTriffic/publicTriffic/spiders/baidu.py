@@ -63,7 +63,9 @@ class BaiduSpider(scrapy.Spider):
                 self.log("successfully search {} {} {} . uid={}".format(
                     meta['province'], meta['city'], meta['name'], uid),level=logging.INFO)
                 yield Request(lineUrl.format(uid,cityCode), callback=self.lineParse, priority=10, meta={
-                    'type': lineType
+                    'type': lineType,
+                    "province":meta['province'],
+                    'city':meta['city']
                 })
             else:
                 continue
@@ -79,8 +81,8 @@ class BaiduSpider(scrapy.Spider):
         lineType = meta['type']
         content = lineJson['content'][0]
         item = BusItem() if lineType == 'bus' else SubwayItem()
-        item['city'] = lineJson['current_city']['name']
-        item['province'] = lineJson['current_city']['up_province_name']
+        item['city'] = meta['city']
+        item['province'] = meta['province']
         item['name'] = content['name']
         item['code'] = content['uid']
         item['time'] = content['workingTimeDesc']
