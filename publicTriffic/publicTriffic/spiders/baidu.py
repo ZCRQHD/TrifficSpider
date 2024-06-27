@@ -115,7 +115,13 @@ class BaiduSpider(scrapy.Spider):
             if station[0] not in self.db['baidu']['station']:
                 self.db['baidu']['station'].append(station[0])
                 url = f"https://map.baidu.com/?uid={station[0]}&ugc_type=3&ugc_ver=1&qt=detailConInfo&device_ratio=2&compat=1&t=1714795401159&auth=bf6H8U7K2IFHGd@x@5VeC6B0Xbf=5HC4uxNxENTHBTRtyOOyyIFIAUvCuyAT9xXwvkGcuVtvvhguVtvyheuVtvCMGuVtvCQMuVtvIPcuxtw8wkv7uvZgMuVtv@vcuVtvc3CuVtvcPPuVtveGvuxVtEnrR1GDdw8E62qvyMuJx7OIgHvhgMuzVVtvrMhuzVtGccZcuxtf0wd0vyOyFOUICUy&seckey=6cm9oCWblWcXJH0b4zVSMCw/zCVTeM6PwLZ6AwxhTtOXbc4JhCaIUuGhXM3GdiGSVrIeM0WWKTAXL2nEuexD5w==,6cm9oCWblWcXJH0b4zVSMCw_zCVTeM6PwLZ6AwxhTtPtxDiQY_xf54N3FJhucp5GGHOByJ6fEHfcjUqr7h8GZmHDi1rcUs1YhedmiJPShVNbacxRGMhFMrTNXpjaBXOkAXmClDAJRybwqL2Xk-Q5f1W7da-MW97xRlJMgxuYRd9C8fT5C8EOxGYpBGON-go4GStjrJRLQBinQFo7O3mlcA&pcevaname=pc4.1&newfrom=zhuzhan_webmap"
-                yield Request(url=url, callback=self.stationParse, priority=20, meta={'uid':station[0]})
+                yield Request(url=url, callback=self.stationParse, priority=20,
+                              meta={'uid':station[0],
+                                    'province':meta['province'],
+                                    'city':meta['city']
+
+
+                                                                                      })
 
         yield item
 
@@ -131,13 +137,16 @@ class BaiduSpider(scrapy.Spider):
                 if uid not in self.db['baidu']['line']:
                     lineCount += 1
                     lineUrl = "https://map.baidu.com/?qt=bsl&tps=&newmap=1&uid={}&c=131"
-
+                    province = stationJson['current_city']
                     self.db['baidu']['line'].append(uid)
 
                     lineType = "bus" if 214 in typeList else "subway"
                     self.log("successfully add  line={} from station={}".format(uid,station['name']))
                     yield Request(lineUrl.format(uid), callback=self.lineParse, priority=10, meta={
-                            'type': lineType
+                            'type': lineType,
+                        'province': meta['province'],
+                        'city': meta['city']
+
                         })
                 else:
                     self.log("station={} line={} has already exists".format(station['name'],uid))
