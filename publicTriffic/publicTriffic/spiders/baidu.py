@@ -32,6 +32,8 @@ class BaiduSpider(scrapy.Spider):
             url = urlFormat.format(line['name'], self.code[line['city']])
             yield Request(url, callback=self.searchParse, priority=5, meta={
                             'name': line['name'],
+                            'province':line['province'],
+                            'city':line['city']
                         })
 
     def close(self, reason: str):
@@ -86,7 +88,9 @@ class BaiduSpider(scrapy.Spider):
         item['time'] = content['workingTimeDesc']
         item['company'] = content['company']
         item['preOpen'] = content['pre_open']
-        item['pairCode'] = content['pair_line']['uid']
+        item['pairCode'] = content['pair_line']['uid'] \
+            if content['pair_line'] is not None else None
+
         self.log(f"found {lineType} line in {item['province']} {item['city']} named {item['name']}")
         pathStr: str = content['geo']
         pathStr = pathStr.split("|")[2][:-1]

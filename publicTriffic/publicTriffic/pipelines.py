@@ -18,9 +18,9 @@ import logging
 a = 6378245.0  # 长半轴
 ee = 0.00669342162296594323  # 扁率
 
-
+class SearchPipeline:
+    pass
 class SaveDBPipeline:
-    MAX_ERROR = 9e-7 # 一米对应的圆心角
     def convert(self, lan, lot):
         bd_lon, bd_lat = bd09convertor.convertMC2LL(lan, lot)
         x = bd_lon - 0.0065
