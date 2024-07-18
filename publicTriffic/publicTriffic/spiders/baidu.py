@@ -4,9 +4,9 @@ import shelve
 
 import json
 
-from scrapy import Request
+from scrapy import Request, Spider
 from scrapy.http.response import Response
-
+import os
 from ..items import *
 
 
@@ -19,33 +19,31 @@ class BaiduSpider(scrapy.Spider):
         jsonFile = open("publicTriffic/result/8684.json", 'r',
                         encoding="utf-8")
         jsonDict = json.load(jsonFile)
-        urlFormat = "https://map.baidu.com/?newmap=1&reqflag=pcmap&biz=1&from=webmap&da_par=direct&pcevaname=pc4.1&qt=s&da_src=searchBox.button&wd={}&src=0&wd2={}"
+        urlFormat = "https://map.baidu.com/?newmap=1&reqflag=pcmap&biz=1&from=webmap&da_par=direct&pcevaname=pc4.1&qt=s&da_src=searchBox.button&wd={}&src=0&c={}"
         self.db = shelve.open('publicTriffic/db/spiderCache','c')
+        codeJson = open('publicTriffic/spiders/cityCode.json', encoding="utf-8")
+        self.code = json.load(codeJson)
         self.db["baidu"] = {
             'line': [],
             'station': []
         }
         # 这两个是去重用的
-        for provinceName in list(jsonDict.keys()):
-            province = jsonDict.pop(provinceName)
-            for cityName in list( province.keys()):
-                city = province.pop(cityName)
-                for typeName in list(city.keys()):
-                    type = city.pop(typeName)
-                    for line in type:
-                        url = urlFormat.format(line['name'], line['city'])
-                        yield Request(url, callback=self.searchParse, priority=5, meta={
-                            "city": cityName,
-                            "province": provinceName,
+        for line in jsonDict:
+            url = urlFormat.format(line['name'], self.code[line['city']])
+            yield Request(url, callback=self.searchParse, priority=5, meta={
                             'name': line['name'],
-
-
                         })
 
+    def close(self, reason: str):
+        self.db.close()
+        os.remove('publicTriffic/db/spiderCache.dir')
+        os.remove('publicTriffic/db/spiderCache.dat')
+        os.remove('publicTriffic/db/spiderCache.bak')
     def searchParse(self, response: Response):
         searchJson = json.loads(response.text)
         cityCode = searchJson['current_city']['code']
-        lineUrl = "https://map.baidu.com/?qt=bsl&tps=&newmap=1&uid={}&c={}&gsign=a2f7723340d3f70225ecb5222306caa8&pcevaname=pc4.1&newfrom=zhuzhan_webmap"
+        lineUrl = ("https://map.baidu.com/?qt=bsl&tps=&newmap=1&uid={}&c={}&gsign=a2f7723340d3f70225ecb5222306caa8&"
+                   "pcevaname=pc4.1&newfrom=zhuzhan_webmap")
         targetLine = searchJson['content']
         meta = response.request.meta
         for place in targetLine:
@@ -90,7 +88,7 @@ class BaiduSpider(scrapy.Spider):
         item['preOpen'] = content['pre_open']
         item['pairCode'] = content['pair_line']['uid']
         self.log(f"found {lineType} line in {item['province']} {item['city']} named {item['name']}")
-        pathStr:str = content['geo']
+        pathStr: str = content['geo']
         pathStr = pathStr.split("|")[2][:-1]
         pathList = pathStr.split(",")
         convertPathList = []
@@ -119,9 +117,7 @@ class BaiduSpider(scrapy.Spider):
                               meta={'uid':station[0],
                                     'province':meta['province'],
                                     'city':meta['city']
-
-
-                                                                                      })
+                                    })
 
         yield item
 

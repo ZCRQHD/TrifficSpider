@@ -54,18 +54,7 @@ class SaveDBPipeline:
                     )
                     platformList.append(platform[0])
                     spider.log(f"successfully add platform {platform[2]} uid={platform[0]} ",)
-                # else:
-                #     if platformResult.geox == lan and platformResult.geoy == lot:
-                #         spider.log("platform the position of uid={}".format(platform[0]))
-                #     else:
-                #         platformResult.geox = lan
-                #         platformResult.geoy = lot
-                #         platformResult.save()
-                #     platformList.append(
-                #         platformResult.uid
-                #     )
-                #     spider.log(f"{platform[2]} uid={platform[0]} has already existed")
-                # del geox,geoy,lan,lot,platformResult
+
             lineResult = Line.get_or_none(Line.uid == item['code'])
             if lineResult is None:
                 startStation = item['stationList'][0][0]
@@ -149,5 +138,5 @@ class SaveJsonPipeline:
         resultDict = {
             'busData': self.db
         }
-        dump(self.db, jsonFile, ensure_ascii=False)
+        dump(resultDict, jsonFile, ensure_ascii=False)
         jsonFile.close()
