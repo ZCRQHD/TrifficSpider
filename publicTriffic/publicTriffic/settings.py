@@ -29,7 +29,7 @@ DOWNLOAD_DELAY = 1
 # The download delay setting will honor only one of:
 CONCURRENT_REQUESTS_PER_DOMAIN = 1024
 CONCURRENT_REQUESTS_PER_IP = 1024
-DEPTH_PRIORITY = -20
+DEPTH_PRIORITY = 20
 # Disable cookies (enabled by default)
 #COOKIES_ENABLED = False
 
