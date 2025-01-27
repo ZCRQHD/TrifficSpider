@@ -62,3 +62,4 @@ class LineStation(Model):
 #     class Meta:
 #         database = db
 #         db_table = "path"
+db.create_tables([LineStation, Platform, Line])

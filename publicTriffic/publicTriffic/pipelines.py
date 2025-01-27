@@ -7,7 +7,6 @@ import math
 # useful for handling different item types with a single interface
 import shelve
 from json import dump
-
 import bd09convertor
 import scrapy
 from pympler.asizeof import asizeof
@@ -19,7 +18,14 @@ a = 6378245.0  # 长半轴
 ee = 0.00669342162296594323  # 扁率
 
 class SearchPipeline:
-    pass
+    def open_spider(self, spider):
+        pass
+
+    def process_item(self, item, spider: scrapy.Spider):
+        if spider.name == 'baidu':
+            uid = item['code']
+
+
 class SaveDBPipeline:
     def convert(self, lan, lot):
         bd_lon, bd_lat = bd09convertor.convertMC2LL(lan, lot)
