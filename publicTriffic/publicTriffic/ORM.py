@@ -44,7 +44,7 @@ class Platform(Model):
 
 
 class LineStation(Model):
-    line = IntegerField()
+    line = CharField()
     platform = CharField()
 
     class Meta:

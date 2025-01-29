@@ -82,11 +82,12 @@ class SaveDBPipeline:
 
 
                 )
-                spider.log(f"successfully add line {item['name']} uid={item['code']} ")
+                spider.log(f"successfully add line {item['name']} uid={item['code']} into database"
+                           , level=logging.INFO)
             else:
-                spider.log(f"{item['name']} uid={item['code']} has already existed")
+                spider.log(f"{item['name']} uid={item['code']} has already saved in database"
+                           , level=logging.INFO)
             for platform_uid in platformList:
-
                 lineStationResult = LineStation.get_or_none(
                     line=item['code'],
                     platform=platform_uid
@@ -97,22 +98,19 @@ class SaveDBPipeline:
                         line=item['code'],
                         platform=platform_uid
                     )
-                    spider.log(f"successfully connect line={item['code']} and platform={platform_uid} ")
+                    spider.log(f"successfully connect line={item['code']} and platform={platform_uid} ", )
                 else:
                     spider.log(f"line={item['code']} and platform={platform_uid} has already connect")
-
-
         return item
 
     def close_spider(self, spider):
         db.close()
-        spider.log("successfully closed database")
+        spider.log("successfully closed database", )
 
 
 class SaveJsonPipeline:
     def open_spider(self, spider):
         self.db = {}
-
     def process_item(self, item, spider: scrapy.Spider):
         if spider.name == "bus":
             province = item['province']

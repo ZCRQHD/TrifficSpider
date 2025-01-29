@@ -2,6 +2,8 @@
 #
 # See documentation in:
 # https://docs.scrapy.org/en/latest/topics/spider-middleware.html
+import logging
+
 import scrapy
 from scrapy import signals
 
@@ -39,26 +41,25 @@ class PublictrifficSpiderMiddleware:
         # Must return an iterable of Request, or item objects.
         for i in result:
             if spider.name == "baidu":
-                if is_item(i):
-                    platList = 0
-                    for plat in i['stationList']:
-                        # 创建/索引站台类
-                        hashResult = hashlib.sha256(plat[1].join(","))
-                        platform_uid = hashResult.hexdigest()
-                        if platform_uid not in self.platformDict.keys():
-                            lan, lot = plat[1].split(',')
-                            location = self.bd09_to_gcj02(float(lan), float(lot))
-                            platform = Platform(location, plat[0], platform_uid, plat[2])
-                            platform.appendLine(plat[0])
-                            self.platformDict[platform_uid] = platform
-                            self.platformDigit += 1
+                if not is_item(i):
+                    uid = i.meta['uid']
+                    requestsType = i.meta['requestsType']
+                    if requestsType == 'line':
+                        if uid in self.lineSet:
+                            spider.log("the line id ={} has already downloaded".format(uid), level=logging.INFO)
                         else:
-                            platform = self.platformDict[platform_uid]
-                            platform.appendLine(plat[0])
-                        platList.append(self.platformDict[platform_uid])
-
-                    i['stationList'] = platList
-            yield i
+                            self.lineSet.add(uid)
+                            yield i
+                    elif requestsType == 'station':
+                        if uid in self.stationSet:
+                            spider.log("the station id ={} has already downloaded".format(uid), level=logging.INFO)
+                        else:
+                            self.stationSet.add(uid)
+                            yield i
+                else:
+                    yield i
+            else:
+                yield i
 
     def process_spider_exception(self, response, exception, spider):
         # Called when a spider or process_spider_input() method
@@ -78,12 +79,8 @@ class PublictrifficSpiderMiddleware:
 
     def spider_opened(self, spider):
         spider.logger.info("Spider opened: %s" % spider.name)
-        self.mainStationDigit = 0  # 总站计数
-        self.stationDigit = 0
-        self.platformDigit = 0
-        self.mainStationDict = {}
-        self.stationDict = {}
-        self.platformDict = {}
+        self.stationSet = set()
+        self.lineSet = set()
 
 
 class PublictrifficDownloaderMiddleware:
