@@ -11,10 +11,12 @@ class BaiduSpider(scrapy.Spider):
     name = "baidu"
     allowed_domains = ["map.baidu.com"]
     start_urls = ["https://map.baidu.commap.baidu.com"]
-    targetCity = ["秦皇岛"]
+    targetCity = []
     targetCityCode = []
-
+    code = {}
     def start_requests(self):
+        self.targetCity = self.settings['TARGET_CITY'].split(',')
+        self.log('the list of target city is {}'.format(','.join(self.targetCity)), level=logging.INFO)
         # 设置日志级别
         jsonFile = open("publicTriffic/result/8684.json", 'r',
                         encoding="utf-8")
@@ -30,7 +32,10 @@ class BaiduSpider(scrapy.Spider):
             if line['city'] not in self.targetCity:
                 continue
             url = urlFormat.format(line['name'], self.code[line['city']])
-            yield Request(url, callback=self.searchParse, priority=5, )
+            yield Request(url, callback=self.searchParse, priority=5, meta={
+                'isSearch': True
+            })
+
 
     def close(self, reason: str):
         pass
@@ -59,6 +64,7 @@ class BaiduSpider(scrapy.Spider):
                 province, city, place['name'], uid), level=logging.INFO)
             yield Request(lineUrl.format(uid, cityCode), callback=self.lineParse, priority=10, meta={
                     'type': lineType,
+                'isSearch': True,
                 'uid': uid,
                 'requestsType': "line"
             }
@@ -117,6 +123,7 @@ class BaiduSpider(scrapy.Spider):
             yield Request(url=url, callback=self.stationParse, priority=40, meta={
                 'uid': station[0],
                 'requestsType': "station"
+                , 'isSearch': True
             }
                           )
 
@@ -140,7 +147,8 @@ class BaiduSpider(scrapy.Spider):
                 yield Request(lineUrl.format(uid), callback=self.lineParse, priority=10, meta={
                         'type': lineType,
                     'uid': uid,
-                    'requestsType': "line"
+                    'requestsType': "line",
+                    'isSearch': True
                     })
             self.log("successfully find station={},the number of line is {}".format(station['name'], lineCount),
                      level=logging.INFO)

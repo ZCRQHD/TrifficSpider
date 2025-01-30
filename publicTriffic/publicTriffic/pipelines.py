@@ -53,7 +53,7 @@ class SaveDBPipeline:
                 if platformResult is None:
 
                     Platform.create(
-                        uid = platform[0],
+                        uid=platform[0],
                         geox=lan,
                         geoy=lot,
                         name=platform[2]

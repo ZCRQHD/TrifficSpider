@@ -42,20 +42,23 @@ class PublictrifficSpiderMiddleware:
         for i in result:
             if spider.name == "baidu":
                 if not is_item(i):
-                    uid = i.meta['uid']
-                    requestsType = i.meta['requestsType']
-                    if requestsType == 'line':
-                        if uid in self.lineSet:
-                            spider.log("the line id ={} has already downloaded".format(uid), level=logging.INFO)
-                        else:
-                            self.lineSet.add(uid)
-                            yield i
-                    elif requestsType == 'station':
-                        if uid in self.stationSet:
-                            spider.log("the station id ={} has already downloaded".format(uid), level=logging.INFO)
-                        else:
-                            self.stationSet.add(uid)
-                            yield i
+                    if i.meta['isSearch']:
+                        yield i
+                    else:
+                        uid = i.meta['uid']
+                        requestsType = i.meta['requestsType']
+                        if requestsType == 'line':
+                            if uid in self.lineSet:
+                                spider.log("the line id ={} has already downloaded".format(uid), level=logging.INFO)
+                            else:
+                                self.lineSet.add(uid)
+                                yield i
+                        elif requestsType == 'station':
+                            if uid in self.stationSet:
+                                spider.log("the station id ={} has already downloaded".format(uid), level=logging.INFO)
+                            else:
+                                self.stationSet.add(uid)
+                                yield i
                 else:
                     yield i
             else:
