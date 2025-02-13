@@ -1,0 +1,6 @@
+bd09convertor==0.0.3
+beautifulsoup4==4.13.3
+itemadapter==0.8.0
+peewee==3.17.3
+Pympler==1.0.1
+Scrapy==2.11.1
